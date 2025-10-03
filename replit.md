@@ -102,6 +102,7 @@ The monorepo structure keeps frontend and backend code together while maintainin
 ### Database
 - **Neon Serverless PostgreSQL** - Cloud-hosted PostgreSQL database with WebSocket connections for serverless environments
 - Connection managed via `@neondatabase/serverless` package with connection pooling
+- **Development SSL Configuration**: TLS certificate validation disabled in development mode (`NODE_TLS_REJECT_UNAUTHORIZED=0`) to bypass self-signed certificate issues. This is safe for development but should not be used in production.
 
 ### UI Component Libraries
 - **Radix UI** - Headless, accessible component primitives for dialogs, dropdowns, tooltips, and form controls

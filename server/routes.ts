@@ -38,6 +38,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const banner = await storage.createHomeBanner(validatedData);
       res.status(201).json(banner);
     } catch (error: any) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
       res.status(400).json({ message: error.message });
     }
   });
