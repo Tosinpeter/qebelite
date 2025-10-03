@@ -27,7 +27,7 @@ export default function SignIn({ onSignIn }: SignInProps) {
               <path d="M23.1 16.5L16.5 9.9L9.9 16.5L16.5 23.1L23.1 16.5Z" fill="white"/>
             </svg>
           </div>
-          <CardTitle className="text-2xl font-bold">Sign in to Flowbite</CardTitle>
+          <CardTitle className="text-2xl font-bold">Sign in to QEB Elite</CardTitle>
           <CardDescription>
             Enter your credentials to access the admin dashboard
           </CardDescription>

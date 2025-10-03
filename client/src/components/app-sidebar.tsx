@@ -1,4 +1,4 @@
-import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard, Settings } from "lucide-react";
+import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 const menuGroups = [
@@ -50,11 +50,6 @@ const menuGroups = [
         url: "/home-settings",
         icon: Home,
       },
-      {
-        title: "Configuration",
-        url: "/settings",
-        icon: Settings,
-      },
     ],
   },
 ];
@@ -72,7 +67,7 @@ export function AppSidebar() {
               <path d="M25.2 0H7.8C3.49218 0 0 3.49218 0 7.8V25.2C0 29.5078 3.49218 33 7.8 33H25.2C29.5078 33 33 29.5078 33 25.2V7.8C33 3.49218 29.5078 0 25.2 0Z" fill="currentColor" className="text-primary"/>
               <path d="M23.1 16.5L16.5 9.9L9.9 16.5L16.5 23.1L23.1 16.5Z" fill="white"/>
             </svg>
-            <span className="text-xl font-semibold text-gray-900 dark:text-white">Flowbite</span>
+            <span className="text-xl font-semibold text-gray-900 dark:text-white">QEB Elite</span>
           </div>
         </div>
         
