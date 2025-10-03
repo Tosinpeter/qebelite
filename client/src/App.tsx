@@ -3,13 +3,10 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Grid3x3, Search } from "lucide-react";
+import { TextInput, Button, Avatar } from "flowbite-react";
+import { HiBell, HiViewGrid, HiSearch, HiMenuAlt1 } from "react-icons/hi";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import UserManagement from "@/pages/user-management";
@@ -17,6 +14,7 @@ import HuddleManagement from "@/pages/huddle-management";
 import NutritionManagement from "@/pages/nutrition-management";
 import HomeSettings from "@/pages/home-settings";
 import WeightRoom from "@/pages/weight-room";
+import { useState } from "react";
 
 function Router() {
   return (
@@ -33,52 +31,55 @@ function Router() {
 }
 
 export default function App() {
-  const style = {
-    "--sidebar-width": "16rem",
-    "--sidebar-width-icon": "3rem",
-  };
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <SidebarProvider style={style as React.CSSProperties}>
-          <div className="flex h-screen w-full">
+        <div className="flex h-screen w-full bg-background">
+          <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 overflow-hidden`}>
             <AppSidebar />
-            <div className="flex flex-col flex-1 overflow-hidden">
-              <header className="flex items-center justify-between gap-4 px-4 py-3 border-b bg-card">
-                <div className="flex items-center gap-4 flex-1">
-                  <SidebarTrigger data-testid="button-sidebar-toggle" />
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="search"
-                      placeholder="Search"
-                      className="pl-9"
-                      data-testid="input-global-search"
-                    />
-                  </div>
+          </aside>
+          <div className="flex flex-col flex-1 overflow-hidden">
+            <header className="flex items-center justify-between gap-4 px-4 py-3 border-b bg-card">
+              <div className="flex items-center gap-4 flex-1">
+                <Button
+                  color="gray"
+                  size="sm"
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  data-testid="button-sidebar-toggle"
+                  className="p-2"
+                >
+                  <HiMenuAlt1 className="h-5 w-5" />
+                </Button>
+                <div className="relative flex-1 max-w-md">
+                  <TextInput
+                    icon={HiSearch}
+                    type="search"
+                    placeholder="Search"
+                    sizing="md"
+                    data-testid="input-global-search"
+                  />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="icon" data-testid="button-notifications">
-                    <Bell className="h-5 w-5" />
-                  </Button>
-                  <Button variant="ghost" size="icon" data-testid="button-grid-view">
-                    <Grid3x3 className="h-5 w-5" />
-                  </Button>
-                  <ThemeToggle />
-                  <Avatar>
-                    <AvatarFallback>AD</AvatarFallback>
-                  </Avatar>
-                </div>
-              </header>
-              <main className="flex-1 overflow-y-auto p-6 bg-background">
-                <div className="max-w-7xl mx-auto">
-                  <Router />
-                </div>
-              </main>
-            </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button color="gray" size="sm" className="p-2" data-testid="button-notifications">
+                  <HiBell className="h-5 w-5" />
+                </Button>
+                <Button color="gray" size="sm" className="p-2" data-testid="button-grid-view">
+                  <HiViewGrid className="h-5 w-5" />
+                </Button>
+                <ThemeToggle />
+                <Avatar rounded size="sm" />
+              </div>
+            </header>
+            <main className="flex-1 overflow-y-auto p-6 bg-background">
+              <div className="max-w-7xl mx-auto">
+                <Router />
+              </div>
+            </main>
           </div>
-        </SidebarProvider>
+        </div>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
