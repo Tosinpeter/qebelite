@@ -5,8 +5,10 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { TextInput, Button, Avatar } from "flowbite-react";
-import { HiBell, HiViewGrid, HiSearch, HiMenuAlt1 } from "react-icons/hi";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Bell, Grid3x3, Search, Menu } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import UserManagement from "@/pages/user-management";
@@ -14,6 +16,7 @@ import HuddleManagement from "@/pages/huddle-management";
 import NutritionManagement from "@/pages/nutrition-management";
 import HomeSettings from "@/pages/home-settings";
 import WeightRoom from "@/pages/weight-room";
+import SignIn from "@/pages/sign-in";
 import { useState } from "react";
 
 function Router() {
@@ -32,48 +35,61 @@ function Router() {
 
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  if (!isAuthenticated) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <SignIn onSignIn={() => setIsAuthenticated(true)} />
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex h-screen w-full bg-background">
+        <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
           <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 overflow-hidden`}>
             <AppSidebar />
           </aside>
           <div className="flex flex-col flex-1 overflow-hidden">
-            <header className="flex items-center justify-between gap-4 px-4 py-3 border-b bg-card">
+            <header className="flex items-center justify-between gap-4 px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="flex items-center gap-4 flex-1">
                 <Button
-                  color="gray"
-                  size="sm"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setSidebarOpen(!sidebarOpen)}
                   data-testid="button-sidebar-toggle"
-                  className="p-2"
                 >
-                  <HiMenuAlt1 className="h-5 w-5" />
+                  <Menu className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </Button>
                 <div className="relative flex-1 max-w-md">
-                  <TextInput
-                    icon={HiSearch}
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
                     type="search"
                     placeholder="Search"
-                    sizing="md"
+                    className="pl-9"
                     data-testid="input-global-search"
                   />
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button color="gray" size="sm" className="p-2" data-testid="button-notifications">
-                  <HiBell className="h-5 w-5" />
+                <Button variant="ghost" size="icon" data-testid="button-notifications">
+                  <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </Button>
-                <Button color="gray" size="sm" className="p-2" data-testid="button-grid-view">
-                  <HiViewGrid className="h-5 w-5" />
+                <Button variant="ghost" size="icon" data-testid="button-grid-view">
+                  <Grid3x3 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </Button>
                 <ThemeToggle />
-                <Avatar rounded size="sm" />
+                <Avatar>
+                  <AvatarFallback className="bg-primary text-primary-foreground">AD</AvatarFallback>
+                </Avatar>
               </div>
             </header>
-            <main className="flex-1 overflow-y-auto p-6 bg-background">
+            <main className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900">
               <div className="max-w-7xl mx-auto">
                 <Router />
               </div>
