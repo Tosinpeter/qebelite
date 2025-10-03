@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,53 +14,93 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-type User = {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  status: string;
-};
+import { useToast } from "@/hooks/use-toast";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import type { User } from "@shared/schema";
 
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [formData, setFormData] = useState({
+    displayName: "",
+    age: "",
+    height: "",
+    weight: "",
+    recipePreference: "",
+    avatarUrl: "",
+  });
 
-  const mockUsers: User[] = [
-    { id: "1", name: "Sarah Johnson", email: "sarah.j@example.com", role: "admin", status: "active" },
-    { id: "2", name: "Mike Chen", email: "mike.c@example.com", role: "coach", status: "active" },
-    { id: "3", name: "Emma Davis", email: "emma.d@example.com", role: "user", status: "active" },
-    { id: "4", name: "Alex Kim", email: "alex.k@example.com", role: "user", status: "inactive" },
-    { id: "5", name: "Jordan Lee", email: "jordan.l@example.com", role: "coach", status: "active" },
-  ];
+  const { toast } = useToast();
 
-  const filteredUsers = mockUsers.filter(user =>
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const { data: users = [], isLoading } = useQuery<User[]>({
+    queryKey: ["/api/users"],
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) =>
+      apiRequest("PATCH", `/api/users/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "User updated successfully" });
+      setIsDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/users/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "User deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const filteredUsers = users.filter(user =>
+    (user.displayName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (user.id.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
-    setIsDialogOpen(true);
-  };
-
-  const handleCreate = () => {
-    setEditingUser(null);
+    setFormData({
+      displayName: user.displayName || "",
+      age: user.age || "",
+      height: user.height || "",
+      weight: user.weight || "",
+      recipePreference: user.recipePreference || "",
+      avatarUrl: user.avatarUrl || "",
+    });
     setIsDialogOpen(true);
   };
 
   const handleDelete = (user: User) => {
-    console.log("Delete user:", user.id);
+    if (confirm(`Are you sure you want to delete ${user.displayName || user.id}?`)) {
+      deleteMutation.mutate(user.id);
+    }
   };
+
+  const handleSave = () => {
+    if (editingUser) {
+      updateMutation.mutate({
+        id: editingUser.id,
+        data: formData,
+      });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500">Loading users...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -67,13 +108,9 @@ export default function UserManagement() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="text-page-title">Users</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage user accounts and permissions
+            Manage user profiles and preferences
           </p>
         </div>
-        <Button onClick={handleCreate} data-testid="button-create-user" className="bg-primary hover:bg-primary-700">
-          <Plus className="h-4 w-4 mr-2" />
-          Add User
-        </Button>
       </div>
 
       <Card>
@@ -94,10 +131,12 @@ export default function UserManagement() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-700 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3">Name</th>
-                  <th className="px-6 py-3">Email</th>
-                  <th className="px-6 py-3">Role</th>
-                  <th className="px-6 py-3">Status</th>
+                  <th className="px-6 py-3">Display Name</th>
+                  <th className="px-6 py-3">Age</th>
+                  <th className="px-6 py-3">Height</th>
+                  <th className="px-6 py-3">Weight</th>
+                  <th className="px-6 py-3">Recipe Preference</th>
+                  <th className="px-6 py-3">Verified</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
@@ -109,20 +148,34 @@ export default function UserManagement() {
                     data-testid={`user-row-${user.id}`}
                   >
                     <td className="px-6 py-4 font-medium text-gray-900 dark:text-white" data-testid={`text-user-name-${user.id}`}>
-                      {user.name}
+                      {user.displayName || "—"}
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.email}
+                      {user.age || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.height || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.weight || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.recipePreference || "—"}
                     </td>
                     <td className="px-6 py-4">
-                      <Badge variant={user.role === "admin" ? "default" : "secondary"} className="capitalize">
-                        {user.role}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4">
-                      <Badge variant={user.status === "active" ? "outline" : "secondary"} className="capitalize">
-                        {user.status}
-                      </Badge>
+                      <div className="flex gap-2">
+                        {user.emailVerified && (
+                          <Badge variant="outline" className="text-xs">
+                            Email
+                          </Badge>
+                        )}
+                        {user.phoneVerified && (
+                          <Badge variant="outline" className="text-xs">
+                            Phone
+                          </Badge>
+                        )}
+                        {!user.emailVerified && !user.phoneVerified && "—"}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -150,6 +203,13 @@ export default function UserManagement() {
                     </td>
                   </tr>
                 ))}
+                {filteredUsers.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                      No users found
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -159,52 +219,85 @@ export default function UserManagement() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent data-testid="dialog-user-form">
           <DialogHeader>
-            <DialogTitle>{editingUser ? "Edit User" : "Create New User"}</DialogTitle>
+            <DialogTitle>Edit User Profile</DialogTitle>
             <DialogDescription>
-              {editingUser ? "Update user information" : "Add a new user to the system"}
+              Update user profile information
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="John Doe" defaultValue={editingUser?.name} data-testid="input-user-name" />
+              <Label htmlFor="displayName">Display Name</Label>
+              <Input 
+                id="displayName" 
+                placeholder="John Doe" 
+                value={formData.displayName}
+                onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                data-testid="input-user-displayname" 
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <Input 
+                  id="age" 
+                  placeholder="25" 
+                  value={formData.age}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  data-testid="input-user-age" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="height">Height</Label>
+                <Input 
+                  id="height" 
+                  placeholder="5'10&quot;" 
+                  value={formData.height}
+                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                  data-testid="input-user-height" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight</Label>
+                <Input 
+                  id="weight" 
+                  placeholder="170 lbs" 
+                  value={formData.weight}
+                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  data-testid="input-user-weight" 
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="john@example.com" defaultValue={editingUser?.email} data-testid="input-user-email" />
+              <Label htmlFor="recipePreference">Recipe Preference</Label>
+              <Input 
+                id="recipePreference" 
+                placeholder="Vegan, Low Carb, etc." 
+                value={formData.recipePreference}
+                onChange={(e) => setFormData({ ...formData, recipePreference: e.target.value })}
+                data-testid="input-user-recipe" 
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
-              <Select defaultValue={editingUser?.role || "user"}>
-                <SelectTrigger data-testid="select-user-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="user">User</SelectItem>
-                  <SelectItem value="coach">Coach</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">Status</Label>
-              <Select defaultValue={editingUser?.status || "active"}>
-                <SelectTrigger data-testid="select-user-status">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="avatarUrl">Avatar URL</Label>
+              <Input 
+                id="avatarUrl" 
+                placeholder="https://..." 
+                value={formData.avatarUrl}
+                onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                data-testid="input-user-avatar" 
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button onClick={() => setIsDialogOpen(false)} data-testid="button-save-user">
-              {editingUser ? "Save Changes" : "Create User"}
+            <Button 
+              onClick={handleSave} 
+              disabled={updateMutation.isPending}
+              data-testid="button-save-user"
+            >
+              {updateMutation.isPending ? "Saving..." : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
