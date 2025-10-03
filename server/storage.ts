@@ -12,8 +12,10 @@ import type {
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  createUser(id: string, user: InsertUser): Promise<User>;
+  updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<boolean>;
   
   getHomeWidgets(): Promise<HomeWidget[]>;
   getHomeWidget(id: string): Promise<HomeWidget | undefined>;
@@ -34,14 +36,26 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async getUserByEmail(email: string): Promise<User | undefined> {
-    const result = await db.select().from(schema.users).where(eq(schema.users.email, email));
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(schema.users);
+  }
+
+  async createUser(id: string, insertUser: InsertUser): Promise<User> {
+    const result = await db.insert(schema.users).values({ ...insertUser, id }).returning();
     return result[0];
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(schema.users).values(insertUser).returning();
+  async updateUser(id: string, user: Partial<InsertUser>): Promise<User | undefined> {
+    const result = await db.update(schema.users)
+      .set({ ...user, updatedAt: new Date() })
+      .where(eq(schema.users.id, id))
+      .returning();
     return result[0];
+  }
+
+  async deleteUser(id: string): Promise<boolean> {
+    const result = await db.delete(schema.users).where(eq(schema.users.id, id)).returning();
+    return result.length > 0;
   }
 
   async getHomeWidgets(): Promise<HomeWidget[]> {

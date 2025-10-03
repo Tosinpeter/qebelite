@@ -3,12 +3,18 @@ import { pgTable, text, varchar, timestamp, integer, boolean } from "drizzle-orm
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  name: text("name").notNull(),
-  email: text("email").notNull().unique(),
-  role: text("role").notNull().default("user"),
-  status: text("status").notNull().default("active"),
+export const users = pgTable("user_profiles", {
+  id: varchar("id").primaryKey(),
+  age: varchar("age", { length: 10 }),
+  height: varchar("height", { length: 20 }),
+  weight: varchar("weight", { length: 20 }),
+  avatarUrl: text("avatar_url"),
+  displayName: varchar("display_name", { length: 255 }),
+  recipePreference: varchar("recipe_preference", { length: 100 }),
+  emailVerified: boolean("email_verified").notNull().default(false),
+  phoneVerified: boolean("phone_verified").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`NOW()`),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`NOW()`),
 });
 
 export const huddles = pgTable("huddles", {
@@ -62,7 +68,8 @@ export const weightRoomCollections = pgTable("weight_room_collections", {
   videoIds: text("video_ids").array(),
 });
 
-export const insertUserSchema = createInsertSchema(users).omit({ id: true });
+export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
+export const updateUserSchema = insertUserSchema.partial();
 export const insertHuddleSchema = createInsertSchema(huddles).omit({ id: true });
 export const insertNutritionPlanSchema = createInsertSchema(nutritionPlans).omit({ id: true });
 export const insertTrainingVideoSchema = createInsertSchema(trainingVideos).omit({ id: true });
