@@ -112,20 +112,6 @@ export function AppSidebar() {
           ))}
         </nav>
         
-        {/* Bottom section */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-          <div className="px-3 py-2 bg-primary-50 dark:bg-gray-700 rounded-lg">
-            <div className="text-xs font-medium text-primary-900 dark:text-white mb-1">
-              Upgrade to Pro
-            </div>
-            <div className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-              Get access to all features
-            </div>
-            <button className="w-full px-3 py-1.5 bg-primary hover:bg-primary-700 text-white text-xs font-medium rounded-lg transition-colors">
-              Upgrade
-            </button>
-          </div>
-        </div>
       </div>
     </aside>
   );
