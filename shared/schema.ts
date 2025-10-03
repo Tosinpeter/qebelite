@@ -67,7 +67,9 @@ export const insertHuddleSchema = createInsertSchema(huddles).omit({ id: true })
 export const insertNutritionPlanSchema = createInsertSchema(nutritionPlans).omit({ id: true });
 export const insertTrainingVideoSchema = createInsertSchema(trainingVideos).omit({ id: true });
 export const insertHomeWidgetSchema = createInsertSchema(homeWidgets).omit({ id: true });
+export const updateHomeWidgetSchema = insertHomeWidgetSchema.partial();
 export const insertHomeBannerSchema = createInsertSchema(homeBanners).omit({ id: true });
+export const updateHomeBannerSchema = insertHomeBannerSchema.partial();
 export const insertWeightRoomCollectionSchema = createInsertSchema(weightRoomCollections).omit({ id: true });
 
 export type User = typeof users.$inferSelect;

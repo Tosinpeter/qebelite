@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,44 +13,79 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { GripVertical, Eye, EyeOff, Plus, Edit, Trash2 } from "lucide-react";
-
-type Widget = {
-  id: string;
-  name: string;
-  type: string;
-  position: number;
-  visible: boolean;
-};
-
-type Banner = {
-  id: string;
-  position: number;
-  imageUrl: string;
-  redirectUrl: string;
-};
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
+import type { HomeBanner, HomeWidget } from "@shared/schema";
 
 export default function HomeSettings() {
-  const [widgets, setWidgets] = useState<Widget[]>([
-    { id: "1", name: "Welcome Banner", type: "banner", position: 0, visible: true },
-    { id: "2", name: "Daily Progress", type: "stats", position: 1, visible: true },
-    { id: "3", name: "Upcoming Huddles", type: "calendar", position: 2, visible: true },
-    { id: "4", name: "Nutrition Tips", type: "content", position: 3, visible: true },
-    { id: "5", name: "Workout of the Day", type: "featured", position: 4, visible: true },
-    { id: "6", name: "Leaderboard", type: "social", position: 5, visible: false },
-  ]);
+  const { toast } = useToast();
+  
+  const { data: widgets = [], isLoading: widgetsLoading } = useQuery<HomeWidget[]>({
+    queryKey: ["/api/home-widgets"],
+  });
 
-  const [banners, setBanners] = useState<Banner[]>([]);
+  const { data: banners = [], isLoading: bannersLoading } = useQuery<HomeBanner[]>({
+    queryKey: ["/api/home-banners"],
+  });
+
   const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
-  const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
+  const [editingBanner, setEditingBanner] = useState<HomeBanner | null>(null);
   const [bannerForm, setBannerForm] = useState({
     position: 0,
     imageUrl: "",
     redirectUrl: "",
   });
 
-  const [draggedItem, setDraggedItem] = useState<Widget | null>(null);
+  const createBannerMutation = useMutation({
+    mutationFn: (data: { position: number; imageUrl: string; redirectUrl: string }) =>
+      apiRequest("POST", "/api/home-banners", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/home-banners"] });
+      toast({ title: "Banner created successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
 
-  const handleDragStart = (widget: Widget) => {
+  const updateBannerMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<HomeBanner> }) =>
+      apiRequest("PATCH", `/api/home-banners/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/home-banners"] });
+      toast({ title: "Banner updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteBannerMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/home-banners/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/home-banners"] });
+      toast({ title: "Banner deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateWidgetMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<HomeWidget> }) =>
+      apiRequest("PATCH", `/api/home-widgets/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/home-widgets"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const [draggedItem, setDraggedItem] = useState<HomeWidget | null>(null);
+
+  const handleDragStart = (widget: HomeWidget) => {
     setDraggedItem(widget);
   };
 
@@ -58,7 +93,7 @@ export default function HomeSettings() {
     e.preventDefault();
   };
 
-  const handleDrop = (targetWidget: Widget) => {
+  const handleDrop = async (targetWidget: HomeWidget) => {
     if (!draggedItem || draggedItem.id === targetWidget.id) return;
 
     const newWidgets = [...widgets];
@@ -68,23 +103,23 @@ export default function HomeSettings() {
     newWidgets.splice(draggedIndex, 1);
     newWidgets.splice(targetIndex, 0, draggedItem);
 
-    const reordered = newWidgets.map((w, i) => ({ ...w, position: i }));
-    setWidgets(reordered);
+    for (let i = 0; i < newWidgets.length; i++) {
+      if (newWidgets[i].position !== i) {
+        await updateWidgetMutation.mutateAsync({ 
+          id: newWidgets[i].id, 
+          data: { position: i } 
+        });
+      }
+    }
+    
     setDraggedItem(null);
   };
 
-  const toggleVisibility = (id: string) => {
-    setWidgets(widgets.map(w => 
-      w.id === id ? { ...w, visible: !w.visible } : w
-    ));
-  };
-
-  const handleSave = () => {
-    console.log("Saving widget configuration:", widgets);
-  };
-
-  const handleReset = () => {
-    console.log("Resetting to default configuration");
+  const toggleVisibility = (widget: HomeWidget) => {
+    updateWidgetMutation.mutate({ 
+      id: widget.id, 
+      data: { visible: !widget.visible } 
+    });
   };
 
   const handleCreateBanner = () => {
@@ -93,7 +128,7 @@ export default function HomeSettings() {
     setIsBannerDialogOpen(true);
   };
 
-  const handleEditBanner = (banner: Banner) => {
+  const handleEditBanner = (banner: HomeBanner) => {
     setEditingBanner(banner);
     setBannerForm({
       position: banner.position,
@@ -104,24 +139,20 @@ export default function HomeSettings() {
   };
 
   const handleDeleteBanner = (id: string) => {
-    setBanners(banners.filter(b => b.id !== id));
+    deleteBannerMutation.mutate(id);
   };
 
   const handleSaveBanner = () => {
     if (editingBanner) {
-      setBanners(banners.map(b =>
-        b.id === editingBanner.id
-          ? { ...b, ...bannerForm }
-          : b
-      ));
+      updateBannerMutation.mutate(
+        { id: editingBanner.id, data: bannerForm },
+        { onSuccess: () => setIsBannerDialogOpen(false) }
+      );
     } else {
-      const newBanner: Banner = {
-        id: Date.now().toString(),
-        ...bannerForm,
-      };
-      setBanners([...banners, newBanner]);
+      createBannerMutation.mutate(bannerForm, {
+        onSuccess: () => setIsBannerDialogOpen(false),
+      });
     }
-    setIsBannerDialogOpen(false);
   };
 
   return (
@@ -241,7 +272,7 @@ export default function HomeSettings() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => toggleVisibility(widget.id)}
+                    onClick={() => toggleVisibility(widget)}
                     data-testid={`button-toggle-${widget.id}`}
                   >
                     {widget.visible ? (
