@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import logoPath from "@assets/logo_1759609546853.png";
 
 interface SignInProps {
   onSignIn: () => void;
@@ -55,10 +56,7 @@ export default function SignIn({ onSignIn }: SignInProps) {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <svg className="w-12 h-12" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M25.2 0H7.8C3.49218 0 0 3.49218 0 7.8V25.2C0 29.5078 3.49218 33 7.8 33H25.2C29.5078 33 33 29.5078 33 25.2V7.8C33 3.49218 29.5078 0 25.2 0Z" fill="currentColor" className="text-primary"/>
-              <path d="M23.1 16.5L16.5 9.9L9.9 16.5L16.5 23.1L23.1 16.5Z" fill="white"/>
-            </svg>
+            <img src={logoPath} alt="QEB Elite Logo" className="h-16" />
           </div>
           <CardTitle className="text-2xl font-bold">Sign in to QEB Elite</CardTitle>
           <CardDescription>
