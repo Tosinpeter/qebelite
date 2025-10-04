@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
 interface SignInProps {
   onSignIn: () => void;
@@ -11,10 +13,41 @@ interface SignInProps {
 export default function SignIn({ onSignIn }: SignInProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSignIn();
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast({
+          variant: "destructive",
+          title: "Authentication failed",
+          description: error.message,
+        });
+      } else if (data.session) {
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
+        });
+        onSignIn();
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -74,15 +107,9 @@ export default function SignIn({ onSignIn }: SignInProps) {
                 Forgot password?
               </a>
             </div>
-            <Button type="submit" className="w-full" data-testid="button-sign-in">
-              Sign in
+            <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-sign-in">
+              {isLoading ? "Signing in..." : "Sign in"}
             </Button>
-            <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-              Don't have an account?{" "}
-              <a href="#" className="text-primary hover:underline" data-testid="link-sign-up">
-                Sign up
-              </a>
-            </div>
           </form>
         </CardContent>
       </Card>
