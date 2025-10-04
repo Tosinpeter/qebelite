@@ -17,7 +17,6 @@ import NutritionManagement from "@/pages/nutrition-management";
 import HomeSettings from "@/pages/home-settings";
 import WeightRoom from "@/pages/weight-room";
 import SignIn from "@/pages/sign-in";
-import SupabaseTest from "@/pages/supabase-test";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 
@@ -30,7 +29,6 @@ function Router() {
       <Route path="/nutrition" component={NutritionManagement} />
       <Route path="/home-settings" component={HomeSettings} />
       <Route path="/weight-room" component={WeightRoom} />
-      <Route path="/supabase-test" component={SupabaseTest} />
       <Route component={NotFound} />
     </Switch>
   );
