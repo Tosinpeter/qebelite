@@ -16,7 +16,7 @@ if (!databaseUrl) {
 
 export const client = postgres(databaseUrl, { 
   prepare: false,
-  ssl: false
+  ssl: 'require'
 });
 
 export const db = drizzle(client, { schema });
