@@ -231,7 +231,7 @@ export default function HomeSettings() {
     setIsWidgetDialogOpen(false);
   };
 
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, formType: 'slide' | 'widget') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -250,7 +250,8 @@ export default function HomeSettings() {
     try {
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
-      const filePath = `slides/${fileName}`;
+      const folderName = formType === 'slide' ? 'slides' : 'widgets';
+      const filePath = `${folderName}/${fileName}`;
 
       const { data, error } = await supabase.storage
         .from('home-slides')
@@ -283,7 +284,11 @@ export default function HomeSettings() {
             .from('home-slides')
             .getPublicUrl(retryData.path);
 
-          setSlideForm({ ...slideForm, imageUrl: publicUrl });
+          if (formType === 'slide') {
+            setSlideForm({ ...slideForm, imageUrl: publicUrl });
+          } else {
+            setWidgetForm({ ...widgetForm, image: publicUrl });
+          }
           toast({
             title: "Upload successful",
             description: "Image uploaded to storage",
@@ -296,7 +301,11 @@ export default function HomeSettings() {
           .from('home-slides')
           .getPublicUrl(data.path);
 
-        setSlideForm({ ...slideForm, imageUrl: publicUrl });
+        if (formType === 'slide') {
+          setSlideForm({ ...slideForm, imageUrl: publicUrl });
+        } else {
+          setWidgetForm({ ...widgetForm, image: publicUrl });
+        }
         toast({
           title: "Upload successful",
           description: "Image uploaded to storage",
@@ -565,7 +574,7 @@ export default function HomeSettings() {
                   id="file-upload"
                   type="file"
                   accept="image/*"
-                  onChange={handleImageUpload}
+                  onChange={(e) => handleImageUpload(e, 'slide')}
                   className="hidden"
                   data-testid="input-file-upload"
                 />
@@ -641,15 +650,49 @@ export default function HomeSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="widget-image">Image URL</Label>
-              <Input
-                id="widget-image"
-                type="url"
-                placeholder="https://example.com/widget.jpg"
-                value={widgetForm.image}
-                onChange={(e) => setWidgetForm({ ...widgetForm, image: e.target.value })}
-                data-testid="input-widget-image"
-              />
+              <Label htmlFor="widget-image">Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="widget-image"
+                  type="url"
+                  placeholder="https://example.com/widget.jpg"
+                  value={widgetForm.image}
+                  onChange={(e) => setWidgetForm({ ...widgetForm, image: e.target.value })}
+                  data-testid="input-widget-image"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('widget-file-upload')?.click()}
+                  disabled={isUploading}
+                  data-testid="button-upload-widget-image"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? "Uploading..." : "Upload"}
+                </Button>
+                <input
+                  id="widget-file-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, 'widget')}
+                  className="hidden"
+                  data-testid="input-widget-file-upload"
+                />
+              </div>
+              {widgetForm.image && (
+                <div className="mt-2">
+                  <img 
+                    src={widgetForm.image} 
+                    alt="Widget preview" 
+                    className="h-32 w-48 object-cover rounded border border-gray-200 dark:border-gray-600"
+                    data-testid="img-widget-preview"
+                  />
+                </div>
+              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Upload an image or paste a URL
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="widget-redirect">Redirect URL</Label>
