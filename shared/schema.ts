@@ -58,6 +58,7 @@ export const homeSlider = pgTable("home_slider", {
   position: integer("position").notNull(),
   imageUrl: text("image_url").notNull(),
   redirectUrl: text("redirect_url").notNull(),
+  text: text("text"),
 });
 
 export const weightRoomCollections = pgTable("weight_room_collections", {
