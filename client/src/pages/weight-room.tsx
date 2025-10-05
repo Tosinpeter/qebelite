@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Clock, Dumbbell } from "lucide-react";
+import { Plus, Play, Clock, Dumbbell, Upload, Trash2, Edit } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,8 +15,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useQuery } from "@tanstack/react-query";
-import { weightRoomQueries } from "@/lib/supabase-queries";
+import { Progress } from "@/components/ui/progress";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
+import { weightRoomQueries, storageHelpers } from "@/lib/supabase-queries";
+import { useToast } from "@/hooks/use-toast";
 import type { WeightRoomCollection } from "@shared/schema";
 
 type Video = {
@@ -27,13 +30,151 @@ type Video = {
 };
 
 export default function WeightRoom() {
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("collections");
+  const [editingCollection, setEditingCollection] = useState<WeightRoomCollection | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [formData, setFormData] = useState({
+    position: 0,
+    title: "",
+    subtitle: "",
+    image: "",
+  });
 
   const { data: collections = [], isLoading } = useQuery<WeightRoomCollection[]>({
     queryKey: ['weight-room-collections'],
     queryFn: weightRoomQueries.getAll,
   });
+
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<WeightRoomCollection>) => weightRoomQueries.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weight-room-collections'] });
+      toast({ title: "Collection created successfully" });
+      setIsDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<WeightRoomCollection> }) =>
+      weightRoomQueries.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weight-room-collections'] });
+      toast({ title: "Collection updated successfully" });
+      setIsDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => weightRoomQueries.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weight-room-collections'] });
+      toast({ title: "Collection deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleCreate = () => {
+    setEditingCollection(null);
+    setFormData({
+      position: collections.length,
+      title: "",
+      subtitle: "",
+      image: "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (collection: WeightRoomCollection) => {
+    setEditingCollection(collection);
+    setFormData({
+      position: collection.position,
+      title: collection.title,
+      subtitle: collection.subtitle || "",
+      image: collection.image,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (collection: WeightRoomCollection) => {
+    if (confirm(`Are you sure you want to delete "${collection.title}"?`)) {
+      deleteMutation.mutate(collection.id);
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Invalid file type",
+        description: "Please upload an image file",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 100);
+
+    try {
+      const fileName = `weight-room-${Date.now()}-${file.name}`;
+      await storageHelpers.uploadFile('user-avatars', fileName, file);
+      const publicUrl = storageHelpers.getPublicUrl('user-avatars', fileName);
+      
+      setFormData({ ...formData, image: publicUrl });
+      setUploadProgress(100);
+      toast({ title: "Image uploaded successfully" });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message,
+      });
+    } finally {
+      clearInterval(progressInterval);
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
+
+  const handleSave = () => {
+    if (!formData.title || !formData.image) {
+      toast({
+        variant: "destructive",
+        title: "Missing required fields",
+        description: "Title and image are required",
+      });
+      return;
+    }
+
+    if (editingCollection) {
+      updateMutation.mutate({ id: editingCollection.id, data: formData });
+    } else {
+      createMutation.mutate(formData);
+    }
+  };
 
   const trainingVideos: Video[] = [
     { id: "1", title: "Proper Squat Form", category: "Technique", duration: 420 },
@@ -59,9 +200,9 @@ export default function WeightRoom() {
             Manage exercise collections and training videos
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-content">
+        <Button onClick={handleCreate} data-testid="button-create-content">
           <Plus className="h-4 w-4 mr-2" />
-          Add Content
+          Add Collection
         </Button>
       </div>
 
@@ -104,11 +245,24 @@ export default function WeightRoom() {
                       )}
                     </div>
                     <div className="mt-4 flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1" data-testid={`button-edit-collection-${collection.id}`}>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleEdit(collection)}
+                        data-testid={`button-edit-collection-${collection.id}`}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
                         Edit
                       </Button>
-                      <Button size="sm" variant="ghost" data-testid={`button-view-collection-${collection.id}`}>
-                        View
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleDelete(collection)}
+                        data-testid={`button-delete-collection-${collection.id}`}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   </CardContent>
@@ -154,27 +308,106 @@ export default function WeightRoom() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent data-testid="dialog-weight-room-form">
           <DialogHeader>
-            <DialogTitle>Add Weight Room Content</DialogTitle>
+            <DialogTitle>{editingCollection ? "Edit Collection" : "Create New Collection"}</DialogTitle>
             <DialogDescription>
-              Create a new collection or upload training video
+              {editingCollection ? "Update collection details" : "Add a new weight room collection"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Content title" data-testid="input-content-title" />
+              <Label htmlFor="position">Position</Label>
+              <Input
+                id="position"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={formData.position}
+                onChange={(e) => setFormData({ ...formData, position: parseInt(e.target.value) || 0 })}
+                data-testid="input-collection-position"
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea id="description" placeholder="Details about this content" data-testid="input-content-description" />
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                placeholder="Collection title"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                data-testid="input-collection-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="subtitle">Subtitle</Label>
+              <Input
+                id="subtitle"
+                placeholder="Collection subtitle (optional)"
+                value={formData.subtitle}
+                onChange={(e) => setFormData({ ...formData, subtitle: e.target.value })}
+                data-testid="input-collection-subtitle"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="image">Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="image"
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={formData.image}
+                  onChange={(e) => setFormData({ ...formData, image: e.target.value })}
+                  data-testid="input-collection-image"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('collection-file-upload')?.click()}
+                  disabled={isUploading}
+                  data-testid="button-upload-collection-image"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? "Uploading..." : "Upload"}
+                </Button>
+                <input
+                  id="collection-file-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  data-testid="input-collection-file-upload"
+                />
+              </div>
+              {formData.image && (
+                <div className="mt-2">
+                  <img 
+                    src={formData.image} 
+                    alt="Collection preview" 
+                    className="h-32 w-48 object-cover rounded border border-gray-200 dark:border-gray-600"
+                    data-testid="img-collection-preview"
+                  />
+                </div>
+              )}
+              {isUploading && (
+                <div className="mt-2">
+                  <Progress value={uploadProgress} className="h-2" />
+                  <p className="text-xs text-center text-gray-500 mt-1">Uploading... {uploadProgress}%</p>
+                </div>
+              )}
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Upload an image or paste a URL
+              </p>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button onClick={() => setIsDialogOpen(false)} data-testid="button-save-content">
-              Create
+            <Button 
+              onClick={handleSave}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-collection"
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingCollection ? "Save Changes" : "Create Collection"}
             </Button>
           </DialogFooter>
         </DialogContent>
