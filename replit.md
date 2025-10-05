@@ -148,7 +148,14 @@ Since the application uses Supabase's anon key from the frontend, Row Level Secu
    - Allow public updates: `CREATE POLICY "Allow public updates" ON storage.objects FOR UPDATE USING (bucket_id = 'user-avatars');`
    - Allow public deletes: `CREATE POLICY "Allow public deletes" ON storage.objects FOR DELETE USING (bucket_id = 'user-avatars');`
 
-2. **Database Table Policies**:
+2. **Storage Policies (recipe-images bucket)**:
+   - Bucket must be created first in Supabase Dashboard: Storage → New Bucket → Name: `recipe-images` (make it public)
+   - Allow public uploads: `CREATE POLICY "Allow public uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'recipe-images');`
+   - Allow public reads: `CREATE POLICY "Allow public reads" ON storage.objects FOR SELECT USING (bucket_id = 'recipe-images');`
+   - Allow public updates: `CREATE POLICY "Allow public updates" ON storage.objects FOR UPDATE USING (bucket_id = 'recipe-images');`
+   - Allow public deletes: `CREATE POLICY "Allow public deletes" ON storage.objects FOR DELETE USING (bucket_id = 'recipe-images');`
+
+3. **Database Table Policies**:
    For admin dashboard functionality, tables need permissive RLS policies or RLS disabled. Options:
    
    **Option A - Disable RLS** (simplest for admin tools):

@@ -275,12 +275,23 @@ export default function NutritionManagement() {
         await storageHelpers.uploadFile('recipe-images', filePath, imageFile);
         imageUrl = storageHelpers.getPublicUrl('recipe-images', filePath);
       } catch (error: any) {
-        toast({
-          title: "Upload Error",
-          description: error.message || "Failed to upload image",
-          variant: "destructive",
-        });
         setIsUploadingImage(false);
+        
+        // Check if it's a bucket not found error
+        if (error.message?.includes('Bucket not found') || error.statusCode === '404') {
+          toast({
+            title: "Storage Bucket Not Found",
+            description: "Please create the 'recipe-images' bucket in Supabase Storage. Go to Storage → New Bucket → Name: recipe-images (make it public).",
+            variant: "destructive",
+            duration: 10000,
+          });
+        } else {
+          toast({
+            title: "Upload Error",
+            description: error.message || "Failed to upload image",
+            variant: "destructive",
+          });
+        }
         return;
       } finally {
         setIsUploadingImage(false);
