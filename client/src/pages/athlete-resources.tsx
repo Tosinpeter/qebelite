@@ -264,10 +264,10 @@ export default function AthleteResources() {
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
+            <Card key={i} className="overflow-hidden">
+              <Skeleton className="h-48 w-full" />
               <CardContent className="p-6 space-y-4">
-                <Skeleton className="h-16 w-16 rounded-full mx-auto" />
-                <Skeleton className="h-5 w-3/4 mx-auto" />
+                <Skeleton className="h-5 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <Skeleton className="h-4 w-5/6" />
               </CardContent>
@@ -277,27 +277,25 @@ export default function AthleteResources() {
       ) : (resources && resources.length > 0) ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {resources.map((resource) => (
-            <Card key={resource.id} className="hover-elevate" data-testid={`resource-item-${resource.id}`}>
-              <CardContent className="p-6 text-center space-y-4">
-                <div className="flex justify-center">
-                  {resource.image ? (
-                    <div className="h-16 w-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
-                      <img 
-                        src={resource.image} 
-                        alt={resource.title}
-                        className="h-full w-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          e.currentTarget.parentElement!.innerHTML = '<div class="flex items-center justify-center h-full w-full"><svg class="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg></div>';
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center">
-                      <BookOpen className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                  )}
+            <Card key={resource.id} className="overflow-hidden hover-elevate" data-testid={`resource-item-${resource.id}`}>
+              {resource.image ? (
+                <div className="h-48 w-full overflow-hidden bg-muted">
+                  <img 
+                    src={resource.image} 
+                    alt={resource.title}
+                    className="h-full w-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.parentElement!.innerHTML = '<div class="flex items-center justify-center h-full w-full bg-muted"><svg class="h-12 w-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg></div>';
+                    }}
+                  />
                 </div>
+              ) : (
+                <div className="h-48 w-full bg-muted flex items-center justify-center">
+                  <BookOpen className="h-12 w-12 text-muted-foreground" />
+                </div>
+              )}
+              <CardContent className="p-6 space-y-4">
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg">{resource.title}</h3>
                   <p className="text-sm text-muted-foreground line-clamp-2">{resource.description}</p>
