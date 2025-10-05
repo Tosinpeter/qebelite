@@ -115,7 +115,6 @@ export default function App() {
                 <Button variant="ghost" size="icon" data-testid="button-grid-view">
                   <Grid3x3 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </Button>
-                <ThemeToggle />
                 <Avatar>
                   <AvatarFallback className="bg-primary text-primary-foreground">AD</AvatarFallback>
                 </Avatar>

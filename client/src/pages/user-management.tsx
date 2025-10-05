@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
@@ -26,6 +27,7 @@ export default function UserManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [formData, setFormData] = useState({
     email: "",
     displayName: "",
@@ -132,6 +134,17 @@ export default function UserManagement() {
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
+
+    const progressInterval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return 90;
+        }
+        return prev + 10;
+      });
+    }, 100);
 
     try {
       const fileExt = file.name.split('.').pop();
@@ -183,6 +196,7 @@ export default function UserManagement() {
       }
 
       if (uploadData) {
+        setUploadProgress(100);
         const { data: { publicUrl } } = supabase.storage
           .from('user-avatars')
           .getPublicUrl(uploadData.path);
@@ -195,13 +209,17 @@ export default function UserManagement() {
       }
     } catch (error: any) {
       console.error('Upload error:', error);
+      clearInterval(progressInterval);
+      setUploadProgress(0);
       toast({
         variant: "destructive",
         title: "Upload failed",
         description: error.message || "Failed to upload avatar",
       });
     } finally {
+      clearInterval(progressInterval);
       setIsUploading(false);
+      setTimeout(() => setUploadProgress(0), 1000);
     }
   };
 
@@ -375,10 +393,10 @@ export default function UserManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="flex justify-center">
+            <div className="flex flex-col items-center gap-3">
               <div 
                 className="relative cursor-pointer group"
-                onClick={() => document.getElementById('avatar-file-upload')?.click()}
+                onClick={() => !isUploading && document.getElementById('avatar-file-upload')?.click()}
               >
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                   {formData.avatarUrl ? (
@@ -391,10 +409,12 @@ export default function UserManagement() {
                     <Upload className="h-8 w-8 text-gray-400" />
                   )}
                 </div>
-                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Upload className="h-6 w-6 text-white" />
-                </div>
-                {formData.avatarUrl && (
+                {!isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Upload className="h-6 w-6 text-white" />
+                  </div>
+                )}
+                {formData.avatarUrl && !isUploading && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -413,9 +433,16 @@ export default function UserManagement() {
                   accept="image/*"
                   onChange={handleAvatarUpload}
                   className="hidden"
+                  disabled={isUploading}
                   data-testid="input-avatar-file-upload"
                 />
               </div>
+              {isUploading && (
+                <div className="w-full max-w-xs">
+                  <Progress value={uploadProgress} className="h-2" />
+                  <p className="text-xs text-center text-gray-500 mt-1">Uploading... {uploadProgress}%</p>
+                </div>
+              )}
             </div>
             {!editingUser && (
               <div className="space-y-2">

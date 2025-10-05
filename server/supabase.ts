@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { client as pgClient } from './db';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -46,36 +47,26 @@ export async function initializeStorage() {
     console.log('Setting up storage policies for user-avatars...');
     
     const policies = [
-      {
-        name: 'Allow public uploads',
-        operation: 'INSERT',
-        sql: `CREATE POLICY IF NOT EXISTS "Allow public uploads" ON storage.objects FOR INSERT TO public WITH CHECK (bucket_id = 'user-avatars');`
-      },
-      {
-        name: 'Allow public reads',
-        operation: 'SELECT',
-        sql: `CREATE POLICY IF NOT EXISTS "Allow public reads" ON storage.objects FOR SELECT TO public USING (bucket_id = 'user-avatars');`
-      },
-      {
-        name: 'Allow public updates',
-        operation: 'UPDATE',
-        sql: `CREATE POLICY IF NOT EXISTS "Allow public updates" ON storage.objects FOR UPDATE TO public USING (bucket_id = 'user-avatars');`
-      },
-      {
-        name: 'Allow public deletes',
-        operation: 'DELETE',
-        sql: `CREATE POLICY IF NOT EXISTS "Allow public deletes" ON storage.objects FOR DELETE TO public USING (bucket_id = 'user-avatars');`
-      }
+      { name: 'Allow public uploads', sql: `CREATE POLICY "Allow public uploads" ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK (bucket_id = 'user-avatars');` },
+      { name: 'Allow public reads', sql: `CREATE POLICY "Allow public reads" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'user-avatars');` },
+      { name: 'Allow public updates', sql: `CREATE POLICY "Allow public updates" ON storage.objects FOR UPDATE TO anon, authenticated USING (bucket_id = 'user-avatars') WITH CHECK (bucket_id = 'user-avatars');` },
+      { name: 'Allow public deletes', sql: `CREATE POLICY "Allow public deletes" ON storage.objects FOR DELETE TO anon, authenticated USING (bucket_id = 'user-avatars');` }
     ];
 
     for (const policy of policies) {
       try {
-        const { error: policyError } = await supabaseAdmin.rpc('exec_sql', { sql: policy.sql });
-        if (policyError) {
-          console.log(`Note: Could not create ${policy.operation} policy - may need manual setup in Supabase dashboard`);
+        const checkResult = await pgClient.unsafe(
+          `SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = '${policy.name}';`
+        );
+        
+        if (checkResult.length === 0) {
+          await pgClient.unsafe(policy.sql);
+          console.log(`✓ Policy created: ${policy.name}`);
+        } else {
+          console.log(`✓ Policy already exists: ${policy.name}`);
         }
-      } catch (err) {
-        console.log(`Note: Policies may need to be set manually in Supabase dashboard for ${policy.operation}`);
+      } catch (err: any) {
+        console.log(`Policy note (${policy.name}):`, err.message || 'May need manual setup');
       }
     }
     
