@@ -54,8 +54,8 @@ export default function NutritionManagement() {
 
         <TabsContent value="daily" className="space-y-4 mt-6">
           {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <Card key={i}>
                   <CardHeader className="p-0">
                     <Skeleton className="aspect-video w-full rounded-t-md" />
@@ -69,7 +69,7 @@ export default function NutritionManagement() {
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {dailyRecipes.map((recipe) => (
                 <Card key={recipe.id} className="hover-elevate overflow-hidden" data-testid={`recipe-item-${recipe.id}`}>
                   <CardHeader className="p-0">
@@ -120,7 +120,7 @@ export default function NutritionManagement() {
 
         <TabsContent value="weekly" className="space-y-4 mt-6">
           {isLoading ? (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4].map((i) => (
                 <Card key={i}>
                   <CardHeader className="p-0">
@@ -135,7 +135,7 @@ export default function NutritionManagement() {
               ))}
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {weeklyRecipes.map((recipe) => (
                 <Card key={recipe.id} className="hover-elevate overflow-hidden" data-testid={`weekly-recipe-${recipe.id}`}>
                   <CardHeader className="p-0">
