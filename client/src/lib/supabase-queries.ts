@@ -260,6 +260,24 @@ export const trainingVideoQueries = {
   }
 };
 
+const mapHomeSlideFromDb = (dbSlide: any): HomeSlide => ({
+  id: dbSlide.id,
+  position: dbSlide.position,
+  imageUrl: dbSlide.image_url,
+  redirectUrl: dbSlide.redirect_url,
+  text: dbSlide.text,
+});
+
+const mapHomeSlideToDb = (slide: Partial<HomeSlide>): any => {
+  const dbSlide: any = {};
+  if (slide.id !== undefined) dbSlide.id = slide.id;
+  if (slide.position !== undefined) dbSlide.position = slide.position;
+  if (slide.imageUrl !== undefined) dbSlide.image_url = slide.imageUrl;
+  if (slide.redirectUrl !== undefined) dbSlide.redirect_url = slide.redirectUrl;
+  if (slide.text !== undefined) dbSlide.text = slide.text;
+  return dbSlide;
+};
+
 export const homeSlideQueries = {
   getAll: async () => {
     const { data, error } = await supabase
@@ -268,7 +286,7 @@ export const homeSlideQueries = {
       .order('position', { ascending: true });
     
     if (error) throw error;
-    return data as HomeSlide[];
+    return data.map(mapHomeSlideFromDb);
   },
 
   getById: async (id: string) => {
@@ -279,30 +297,32 @@ export const homeSlideQueries = {
       .single();
     
     if (error) throw error;
-    return data as HomeSlide;
+    return mapHomeSlideFromDb(data);
   },
 
   create: async (slide: Partial<HomeSlide>) => {
+    const dbSlide = mapHomeSlideToDb(slide);
     const { data, error } = await supabase
       .from('home_slider')
-      .insert(slide)
+      .insert(dbSlide)
       .select()
       .single();
     
     if (error) throw error;
-    return data as HomeSlide;
+    return mapHomeSlideFromDb(data);
   },
 
   update: async (id: string, updates: Partial<HomeSlide>) => {
+    const dbUpdates = mapHomeSlideToDb(updates);
     const { data, error } = await supabase
       .from('home_slider')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data as HomeSlide;
+    return mapHomeSlideFromDb(data);
   },
 
   delete: async (id: string) => {
@@ -315,6 +335,28 @@ export const homeSlideQueries = {
   }
 };
 
+const mapHomeWidgetItemFromDb = (dbWidget: any): HomeWidgetItem => ({
+  id: dbWidget.id,
+  position: dbWidget.position,
+  image: dbWidget.image,
+  title: dbWidget.title,
+  subtitle: dbWidget.subtitle,
+  redirectUrl: dbWidget.redirect_url,
+  createdAt: dbWidget.created_at,
+});
+
+const mapHomeWidgetItemToDb = (widget: Partial<HomeWidgetItem>): any => {
+  const dbWidget: any = {};
+  if (widget.id !== undefined) dbWidget.id = widget.id;
+  if (widget.position !== undefined) dbWidget.position = widget.position;
+  if (widget.image !== undefined) dbWidget.image = widget.image;
+  if (widget.title !== undefined) dbWidget.title = widget.title;
+  if (widget.subtitle !== undefined) dbWidget.subtitle = widget.subtitle;
+  if (widget.redirectUrl !== undefined) dbWidget.redirect_url = widget.redirectUrl;
+  if (widget.createdAt !== undefined) dbWidget.created_at = widget.createdAt;
+  return dbWidget;
+};
+
 export const homeWidgetItemQueries = {
   getAll: async () => {
     const { data, error } = await supabase
@@ -323,7 +365,7 @@ export const homeWidgetItemQueries = {
       .order('position', { ascending: true });
     
     if (error) throw error;
-    return data as HomeWidgetItem[];
+    return data.map(mapHomeWidgetItemFromDb);
   },
 
   getById: async (id: string) => {
@@ -334,30 +376,32 @@ export const homeWidgetItemQueries = {
       .single();
     
     if (error) throw error;
-    return data as HomeWidgetItem;
+    return mapHomeWidgetItemFromDb(data);
   },
 
   create: async (widget: Partial<HomeWidgetItem>) => {
+    const dbWidget = mapHomeWidgetItemToDb(widget);
     const { data, error } = await supabase
       .from('home_widget')
-      .insert(widget)
+      .insert(dbWidget)
       .select()
       .single();
     
     if (error) throw error;
-    return data as HomeWidgetItem;
+    return mapHomeWidgetItemFromDb(data);
   },
 
   update: async (id: string, updates: Partial<HomeWidgetItem>) => {
+    const dbUpdates = mapHomeWidgetItemToDb(updates);
     const { data, error } = await supabase
       .from('home_widget')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data as HomeWidgetItem;
+    return mapHomeWidgetItemFromDb(data);
   },
 
   delete: async (id: string) => {
