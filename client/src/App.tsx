@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Grid3x3, Search, Menu } from "lucide-react";
+import { Bell, Search, Menu } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import UserManagement from "@/pages/user-management";
@@ -111,9 +111,6 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <Button variant="ghost" size="icon" data-testid="button-notifications">
                   <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                </Button>
-                <Button variant="ghost" size="icon" data-testid="button-grid-view">
-                  <Grid3x3 className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </Button>
                 <Avatar>
                   <AvatarFallback className="bg-primary text-primary-foreground">AD</AvatarFallback>

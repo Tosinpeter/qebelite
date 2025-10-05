@@ -47,24 +47,20 @@ export async function initializeStorage() {
     console.log('Setting up storage policies for user-avatars...');
     
     const policies = [
-      { name: 'Allow public uploads', sql: `CREATE POLICY "Allow public uploads" ON storage.objects FOR INSERT TO anon, authenticated WITH CHECK (bucket_id = 'user-avatars');` },
-      { name: 'Allow public reads', sql: `CREATE POLICY "Allow public reads" ON storage.objects FOR SELECT TO anon, authenticated USING (bucket_id = 'user-avatars');` },
-      { name: 'Allow public updates', sql: `CREATE POLICY "Allow public updates" ON storage.objects FOR UPDATE TO anon, authenticated USING (bucket_id = 'user-avatars') WITH CHECK (bucket_id = 'user-avatars');` },
-      { name: 'Allow public deletes', sql: `CREATE POLICY "Allow public deletes" ON storage.objects FOR DELETE TO anon, authenticated USING (bucket_id = 'user-avatars');` }
+      { name: 'Allow public uploads', sql: `CREATE POLICY "Allow public uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'user-avatars');` },
+      { name: 'Allow public reads', sql: `CREATE POLICY "Allow public reads" ON storage.objects FOR SELECT USING (bucket_id = 'user-avatars');` },
+      { name: 'Allow public updates', sql: `CREATE POLICY "Allow public updates" ON storage.objects FOR UPDATE USING (bucket_id = 'user-avatars') WITH CHECK (bucket_id = 'user-avatars');` },
+      { name: 'Allow public deletes', sql: `CREATE POLICY "Allow public deletes" ON storage.objects FOR DELETE USING (bucket_id = 'user-avatars');` }
     ];
 
     for (const policy of policies) {
       try {
-        const checkResult = await pgClient.unsafe(
-          `SELECT 1 FROM pg_policies WHERE schemaname = 'storage' AND tablename = 'objects' AND policyname = '${policy.name}';`
+        await pgClient.unsafe(
+          `DROP POLICY IF EXISTS "${policy.name}" ON storage.objects;`
         );
         
-        if (checkResult.length === 0) {
-          await pgClient.unsafe(policy.sql);
-          console.log(`✓ Policy created: ${policy.name}`);
-        } else {
-          console.log(`✓ Policy already exists: ${policy.name}`);
-        }
+        await pgClient.unsafe(policy.sql);
+        console.log(`✓ Policy created: ${policy.name}`);
       } catch (err: any) {
         console.log(`Policy note (${policy.name}):`, err.message || 'May need manual setup');
       }
