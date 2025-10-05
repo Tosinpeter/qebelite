@@ -330,6 +330,48 @@ export default function UserManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="flex justify-center">
+              <div 
+                className="relative cursor-pointer group"
+                onClick={() => document.getElementById('avatar-file-upload')?.click()}
+              >
+                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+                  {formData.avatarUrl ? (
+                    <img 
+                      src={formData.avatarUrl} 
+                      alt="Avatar" 
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Upload className="h-8 w-8 text-gray-400" />
+                  )}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Upload className="h-6 w-6 text-white" />
+                </div>
+                {formData.avatarUrl && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFormData({ ...formData, avatarUrl: "" });
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+                <input
+                  id="avatar-file-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarUpload}
+                  className="hidden"
+                  data-testid="input-avatar-file-upload"
+                />
+              </div>
+            </div>
             {!editingUser && (
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -364,58 +406,6 @@ export default function UserManagement() {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Avatar</Label>
-              <div className="flex items-start gap-4">
-                {formData.avatarUrl && (
-                  <div className="relative">
-                    <img 
-                      src={formData.avatarUrl} 
-                      alt="Avatar preview" 
-                      className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
-                    />
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 hover:bg-red-600 text-white"
-                      onClick={() => setFormData({ ...formData, avatarUrl: "" })}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById('avatar-file-upload')?.click()}
-                    disabled={isUploading}
-                    data-testid="button-upload-avatar"
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {isUploading ? "Uploading..." : formData.avatarUrl ? "Change Avatar" : "Upload Avatar"}
-                  </Button>
-                  <input
-                    id="avatar-file-upload"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    data-testid="input-avatar-file-upload"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                    Upload a photo or enter a URL below
-                  </p>
-                  <Input 
-                    placeholder="Or paste image URL" 
-                    value={formData.avatarUrl}
-                    onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                    className="mt-2"
-                    data-testid="input-user-avatar-url" 
-                  />
-                </div>
-              </div>
             </div>
             {!editingUser && (
               <div className="space-y-2">
