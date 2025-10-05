@@ -83,10 +83,8 @@ export const weightRoomVideos = pgTable("weight_room_videos", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   collectionId: varchar("collection_id").notNull().references(() => weightRoomCollections.id, { onDelete: 'cascade' }),
   title: text("title").notNull(),
+  description: text("description"),
   videoUrl: text("video_url").notNull(),
-  thumbnailUrl: text("thumbnail_url"),
-  duration: integer("duration"),
-  position: integer("position").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });

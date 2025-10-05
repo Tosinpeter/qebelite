@@ -494,10 +494,8 @@ const mapWeightRoomVideoFromDb = (dbVideo: any): WeightRoomVideo => ({
   id: dbVideo.id,
   collectionId: dbVideo.collection_id,
   title: dbVideo.title,
+  description: dbVideo.description,
   videoUrl: dbVideo.video_url,
-  thumbnailUrl: dbVideo.thumbnail_url,
-  duration: dbVideo.duration,
-  position: dbVideo.position,
 });
 
 const mapWeightRoomVideoToDb = (video: Partial<WeightRoomVideo>): any => {
@@ -505,10 +503,8 @@ const mapWeightRoomVideoToDb = (video: Partial<WeightRoomVideo>): any => {
   if (video.id !== undefined) dbVideo.id = video.id;
   if (video.collectionId !== undefined) dbVideo.collection_id = video.collectionId;
   if (video.title !== undefined) dbVideo.title = video.title;
+  if (video.description !== undefined) dbVideo.description = video.description;
   if (video.videoUrl !== undefined) dbVideo.video_url = video.videoUrl;
-  if (video.thumbnailUrl !== undefined) dbVideo.thumbnail_url = video.thumbnailUrl;
-  if (video.duration !== undefined) dbVideo.duration = video.duration;
-  if (video.position !== undefined) dbVideo.position = video.position;
   return dbVideo;
 };
 
@@ -517,7 +513,7 @@ export const weightRoomVideoQueries = {
     const { data, error } = await supabase
       .from('weight_room_videos')
       .select('*')
-      .order('position', { ascending: true });
+      .order('title', { ascending: true });
     
     if (error) throw error;
     return data.map(mapWeightRoomVideoFromDb);
@@ -528,7 +524,7 @@ export const weightRoomVideoQueries = {
       .from('weight_room_videos')
       .select('*')
       .eq('collection_id', collectionId)
-      .order('position', { ascending: true });
+      .order('title', { ascending: true });
     
     if (error) throw error;
     return data.map(mapWeightRoomVideoFromDb);
