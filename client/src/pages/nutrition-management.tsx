@@ -451,7 +451,6 @@ export default function NutritionManagement() {
       description: videoFormData.description.trim() || undefined,
       category: videoFormData.category.trim(),
       videoUrl: videoFormData.videoUrl.trim(),
-      thumbnail: videoFormData.thumbnail.trim() || undefined,
       duration: videoFormData.duration ? parseInt(videoFormData.duration) : undefined,
     };
 
