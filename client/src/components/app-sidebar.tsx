@@ -1,4 +1,4 @@
-import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard } from "lucide-react";
+import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard, BookOpen } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImage from "@assets/logo_1759665184540.png";
 
@@ -40,6 +40,11 @@ const menuGroups = [
         title: "Weight Room",
         url: "/weight-room",
         icon: Dumbbell,
+      },
+      {
+        title: "Athlete Resources",
+        url: "/athlete-resources",
+        icon: BookOpen,
       },
     ],
   },

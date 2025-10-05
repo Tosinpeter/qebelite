@@ -24,7 +24,7 @@ Preferred communication style: Simple, everyday language.
 - Design system inspired by Material Design and Linear, prioritizing information density and efficient workflows
 
 **Component Structure:**
-- Page-level components in `/client/src/pages` for each major section (Dashboard, Users, Huddles, Nutrition, Weight Room, Home Settings)
+- Page-level components in `/client/src/pages` for each major section (Dashboard, Users, Huddles, Nutrition, Weight Room, Athlete Resources, Home Settings)
 - Reusable UI components in `/client/src/components/ui` following atomic design principles
 - Custom hooks in `/client/src/hooks` for shared logic (mobile detection, toast notifications)
 
@@ -48,7 +48,7 @@ The architecture separates concerns cleanly between data fetching (React Query),
 **Data Access Layer:**
 - Query helpers in `/client/src/lib/supabase-queries.ts` encapsulate all database operations
 - Type-safe operations using Supabase client with TypeScript types from shared schema
-- Organized by entity (users, huddles, nutrition, videos, home content, weight room)
+- Organized by entity (users, huddles, nutrition, videos, home content, weight room, athlete resources)
 - Each helper provides CRUD operations (getAll, getById, create, update, delete)
 
 **Database Security:**
@@ -76,6 +76,7 @@ The Supabase-only architecture eliminates the need for a custom backend server, 
 4. **Training Videos** - Video library with categorization, duration, and thumbnails
 5. **Home Widgets** - Configurable dashboard widgets with positioning and visibility controls
 6. **Home Banners** - Promotional banners with images and redirect URLs
+7. **Athlete Resources** - External resource links with icon images, descriptions, and positioning
 
 **Schema Design Decisions:**
 - UUID primary keys (`gen_random_uuid()`) for distributed systems compatibility
@@ -167,6 +168,7 @@ Since the application uses Supabase's anon key from the frontend, Row Level Secu
    ALTER TABLE home_slider DISABLE ROW LEVEL SECURITY;
    ALTER TABLE home_widget DISABLE ROW LEVEL SECURITY;
    ALTER TABLE weight_room_collections DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE athlete_resources DISABLE ROW LEVEL SECURITY;
    ```
    
    **Option B - Role-based RLS** (more secure):

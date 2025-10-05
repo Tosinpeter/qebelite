@@ -10,7 +10,8 @@ import type {
   WeightRoomCollection,
   WeightRoomVideo,
   Recipe,
-  NutritionVideo
+  NutritionVideo,
+  AthleteResource
 } from '@shared/schema';
 
 const mapUserFromDb = (dbUser: any): User => ({
@@ -789,6 +790,81 @@ export const nutritionVideoQueries = {
     
     if (error) throw error;
   }
+};
+
+const mapAthleteResourceFromDb = (data: any): AthleteResource => ({
+  id: data.id,
+  createdAt: data.created_at,
+  title: data.title,
+  description: data.description,
+  icon: data.icon,
+  externalUrl: data.external_url,
+  position: data.position,
+});
+
+const mapAthleteResourceToDb = (resource: Partial<AthleteResource>) => ({
+  title: resource.title,
+  description: resource.description,
+  icon: resource.icon,
+  external_url: resource.externalUrl,
+  position: resource.position,
+});
+
+export const athleteResourceQueries = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('athlete_resources')
+      .select('*')
+      .order('position', { ascending: true });
+    
+    if (error) throw error;
+    return data?.map(mapAthleteResourceFromDb) || [];
+  },
+
+  getById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('athlete_resources')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return mapAthleteResourceFromDb(data);
+  },
+
+  create: async (resource: Partial<AthleteResource>) => {
+    const dbResource = mapAthleteResourceToDb(resource);
+    const { data, error } = await supabase
+      .from('athlete_resources')
+      .insert(dbResource)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapAthleteResourceFromDb(data);
+  },
+
+  update: async (id: string, resource: Partial<AthleteResource>) => {
+    const dbResource = mapAthleteResourceToDb(resource);
+    const { data, error } = await supabase
+      .from('athlete_resources')
+      .update(dbResource)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapAthleteResourceFromDb(data);
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('athlete_resources')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
 };
 
 export const storageHelpers = {
