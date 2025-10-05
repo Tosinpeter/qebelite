@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, ChefHat } from "lucide-react";
+import { Plus, Edit, Trash2, ChefHat, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -12,24 +12,235 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useQuery } from "@tanstack/react-query";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { recipeQueries } from "@/lib/supabase-queries";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import type { Recipe } from "@shared/schema";
 
 export default function NutritionManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("daily");
+  const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [deleteRecipe, setDeleteRecipe] = useState<Recipe | null>(null);
+  
+  const [formData, setFormData] = useState({
+    type: "daily",
+    meal: "",
+    title: "",
+    description: "",
+    image: "",
+    ingredients: [""],
+    instructions: [""],
+  });
+
+  const { toast } = useToast();
 
   const { data: recipes, isLoading } = useQuery({
     queryKey: ['/recipes'],
     queryFn: () => recipeQueries.getAll(),
   });
 
+  const createMutation = useMutation({
+    mutationFn: (data: Partial<Recipe>) => recipeQueries.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/recipes'] });
+      toast({
+        title: "Success",
+        description: "Recipe created successfully",
+      });
+      handleCloseDialog();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create recipe",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Recipe> }) =>
+      recipeQueries.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/recipes'] });
+      toast({
+        title: "Success",
+        description: "Recipe updated successfully",
+      });
+      handleCloseDialog();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update recipe",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => recipeQueries.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/recipes'] });
+      toast({
+        title: "Success",
+        description: "Recipe deleted successfully",
+      });
+      setDeleteRecipe(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete recipe",
+        variant: "destructive",
+      });
+    },
+  });
+
   const dailyRecipes = recipes?.filter(r => r.type === 'daily') || [];
   const weeklyRecipes = recipes?.filter(r => r.type === 'weekly') || [];
+
+  const handleOpenDialog = (recipe?: Recipe) => {
+    if (recipe) {
+      setEditingRecipe(recipe);
+      setFormData({
+        type: recipe.type,
+        meal: recipe.meal,
+        title: recipe.title,
+        description: recipe.description,
+        image: recipe.image,
+        ingredients: recipe.ingredients,
+        instructions: recipe.instructions,
+      });
+    } else {
+      setEditingRecipe(null);
+      setFormData({
+        type: activeTab === "weekly" ? "weekly" : "daily",
+        meal: "",
+        title: "",
+        description: "",
+        image: "",
+        ingredients: [""],
+        instructions: [""],
+      });
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingRecipe(null);
+    setFormData({
+      type: "daily",
+      meal: "",
+      title: "",
+      description: "",
+      image: "",
+      ingredients: [""],
+      instructions: [""],
+    });
+  };
+
+  const handleAddIngredient = () => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: [...prev.ingredients, ""],
+    }));
+  };
+
+  const handleRemoveIngredient = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleIngredientChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      ingredients: prev.ingredients.map((ing, i) => i === index ? value : ing),
+    }));
+  };
+
+  const handleAddInstruction = () => {
+    setFormData(prev => ({
+      ...prev,
+      instructions: [...prev.instructions, ""],
+    }));
+  };
+
+  const handleRemoveInstruction = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      instructions: prev.instructions.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleInstructionChange = (index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      instructions: prev.instructions.map((inst, i) => i === index ? value : inst),
+    }));
+  };
+
+  const handleSubmit = () => {
+    const ingredients = formData.ingredients.filter(i => i.trim() !== "");
+    const instructions = formData.instructions.filter(i => i.trim() !== "");
+
+    if (!formData.title.trim() || !formData.meal.trim() || ingredients.length === 0 || instructions.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const recipeData = {
+      type: formData.type,
+      meal: formData.meal,
+      title: formData.title,
+      description: formData.description,
+      image: formData.image || "https://images.unsplash.com/photo-1546548970-71785318a17b",
+      ingredients,
+      instructions,
+    };
+
+    if (editingRecipe) {
+      updateMutation.mutate({ id: editingRecipe.id, data: recipeData });
+    } else {
+      createMutation.mutate(recipeData);
+    }
+  };
+
+  const handleDelete = () => {
+    if (deleteRecipe) {
+      deleteMutation.mutate(deleteRecipe.id);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -40,7 +251,7 @@ export default function NutritionManagement() {
             Manage recipes and meal plans
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-recipe">
+        <Button onClick={() => handleOpenDialog()} data-testid="button-create-recipe">
           <Plus className="h-4 w-4 mr-2" />
           Add Recipe
         </Button>
@@ -100,14 +311,22 @@ export default function NutritionManagement() {
                       </div>
                     </div>
                     <div className="mt-4 flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1" data-testid={`button-view-recipe-${recipe.id}`}>
-                        <ChefHat className="h-3 w-3 mr-1" />
-                        View Recipe
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1" 
+                        onClick={() => handleOpenDialog(recipe)}
+                        data-testid={`button-edit-recipe-${recipe.id}`}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
                       </Button>
-                      <Button size="sm" variant="ghost" data-testid={`button-edit-recipe-${recipe.id}`}>
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="ghost" data-testid={`button-delete-recipe-${recipe.id}`}>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setDeleteRecipe(recipe)}
+                        data-testid={`button-delete-recipe-${recipe.id}`}
+                      >
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -166,14 +385,22 @@ export default function NutritionManagement() {
                       </div>
                     </div>
                     <div className="mt-4 flex gap-2">
-                      <Button size="sm" variant="outline" className="flex-1" data-testid={`button-view-weekly-recipe-${recipe.id}`}>
-                        <ChefHat className="h-3 w-3 mr-1" />
-                        View Recipe
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleOpenDialog(recipe)}
+                        data-testid={`button-edit-weekly-recipe-${recipe.id}`}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
                       </Button>
-                      <Button size="sm" variant="ghost" data-testid={`button-edit-weekly-recipe-${recipe.id}`}>
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="ghost" data-testid={`button-delete-weekly-recipe-${recipe.id}`}>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setDeleteRecipe(recipe)}
+                        data-testid={`button-delete-weekly-recipe-${recipe.id}`}
+                      >
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
@@ -185,34 +412,187 @@ export default function NutritionManagement() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent data-testid="dialog-recipe-form">
+      <Dialog open={isDialogOpen} onOpenChange={handleCloseDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-recipe-form">
           <DialogHeader>
-            <DialogTitle>Add Recipe</DialogTitle>
+            <DialogTitle>{editingRecipe ? "Edit Recipe" : "Add Recipe"}</DialogTitle>
             <DialogDescription>
-              Create a new recipe with ingredients and instructions
+              {editingRecipe ? "Update the recipe details" : "Create a new recipe with ingredients and instructions"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Recipe title" data-testid="input-recipe-title" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="type">Type</Label>
+                <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
+                  <SelectTrigger data-testid="select-recipe-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly Meal Prep</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="meal">Meal Category</Label>
+                <Input 
+                  id="meal" 
+                  placeholder="e.g., breakfast, lunch, dinner, snack" 
+                  value={formData.meal}
+                  onChange={(e) => setFormData(prev => ({ ...prev, meal: e.target.value }))}
+                  data-testid="input-recipe-meal" 
+                />
+              </div>
             </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="title">Title *</Label>
+              <Input 
+                id="title" 
+                placeholder="Recipe title" 
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                data-testid="input-recipe-title" 
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" placeholder="Brief description" data-testid="input-recipe-description" />
+              <Textarea 
+                id="description" 
+                placeholder="Brief description" 
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                data-testid="input-recipe-description" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="image">Image URL</Label>
+              <Input 
+                id="image" 
+                placeholder="https://..." 
+                value={formData.image}
+                onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
+                data-testid="input-recipe-image" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label>Ingredients *</Label>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant="outline"
+                  onClick={handleAddIngredient}
+                  data-testid="button-add-ingredient"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.ingredients.map((ingredient, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Input 
+                      placeholder={`Ingredient ${index + 1}`}
+                      value={ingredient}
+                      onChange={(e) => handleIngredientChange(index, e.target.value)}
+                      data-testid={`input-ingredient-${index}`}
+                    />
+                    {formData.ingredients.length > 1 && (
+                      <Button 
+                        type="button" 
+                        size="icon" 
+                        variant="ghost"
+                        onClick={() => handleRemoveIngredient(index)}
+                        data-testid={`button-remove-ingredient-${index}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <Label>Instructions *</Label>
+                <Button 
+                  type="button" 
+                  size="sm" 
+                  variant="outline"
+                  onClick={handleAddInstruction}
+                  data-testid="button-add-instruction"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Add
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {formData.instructions.map((instruction, index) => (
+                  <div key={index} className="flex gap-2">
+                    <Textarea 
+                      placeholder={`Step ${index + 1}`}
+                      value={instruction}
+                      onChange={(e) => handleInstructionChange(index, e.target.value)}
+                      rows={2}
+                      data-testid={`input-instruction-${index}`}
+                    />
+                    {formData.instructions.length > 1 && (
+                      <Button 
+                        type="button" 
+                        size="icon" 
+                        variant="ghost"
+                        onClick={() => handleRemoveInstruction(index)}
+                        data-testid={`button-remove-instruction-${index}`}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
+            <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button onClick={() => setIsDialogOpen(false)} data-testid="button-save-recipe">
-              Create
+            <Button 
+              onClick={handleSubmit} 
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-recipe"
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingRecipe ? "Update" : "Create")}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteRecipe} onOpenChange={() => setDeleteRecipe(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Recipe</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteRecipe?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              data-testid="button-confirm-delete"
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
