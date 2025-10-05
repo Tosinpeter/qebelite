@@ -138,6 +138,9 @@ export default function UserManagement() {
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
+      let uploadData;
+      let uploadError;
+
       const { data, error } = await supabase.storage
         .from('user-avatars')
         .upload(filePath, file, {
@@ -145,15 +148,18 @@ export default function UserManagement() {
           upsert: false
         });
 
-      if (error) {
-        if (error.message.includes('Bucket not found')) {
+      uploadData = data;
+      uploadError = error;
+
+      if (uploadError) {
+        if (uploadError.message.includes('Bucket not found') || uploadError.message.includes('not found')) {
           const { error: bucketError } = await supabase.storage.createBucket('user-avatars', {
             public: true,
             fileSizeLimit: 5242880
           });
 
           if (bucketError && !bucketError.message.includes('already exists')) {
-            throw bucketError;
+            console.error('Bucket creation error:', bucketError);
           }
 
           const { data: retryData, error: retryError } = await supabase.storage
@@ -163,29 +169,28 @@ export default function UserManagement() {
               upsert: false
             });
 
-          if (retryError) throw retryError;
+          if (retryError) {
+            console.error('Retry upload error:', retryError);
+            throw retryError;
+          }
 
-          const { data: { publicUrl } } = supabase.storage
-            .from('user-avatars')
-            .getPublicUrl(retryData.path);
-
-          setFormData({ ...formData, avatarUrl: publicUrl });
-          toast({
-            title: "Upload successful",
-            description: "Avatar uploaded to storage",
-          });
+          uploadData = retryData;
+          uploadError = null;
         } else {
-          throw error;
+          console.error('Upload error:', uploadError);
+          throw uploadError;
         }
-      } else {
+      }
+
+      if (uploadData) {
         const { data: { publicUrl } } = supabase.storage
           .from('user-avatars')
-          .getPublicUrl(data.path);
+          .getPublicUrl(uploadData.path);
 
         setFormData({ ...formData, avatarUrl: publicUrl });
         toast({
           title: "Upload successful",
-          description: "Avatar uploaded to storage",
+          description: "Avatar uploaded successfully",
         });
       }
     } catch (error: any) {
@@ -446,28 +451,6 @@ export default function UserManagement() {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
-                <Input 
-                  id="age" 
-                  placeholder="25" 
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  data-testid="input-user-age" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight</Label>
-                <Input 
-                  id="weight" 
-                  placeholder="170 lbs" 
-                  value={formData.weight}
-                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  data-testid="input-user-weight" 
-                />
-              </div>
             </div>
             {!editingUser && (
               <div className="space-y-2">
