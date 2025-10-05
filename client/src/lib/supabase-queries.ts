@@ -580,6 +580,7 @@ export const weightRoomVideoQueries = {
 const mapRecipeFromDb = (dbRecipe: any): Recipe => ({
   id: dbRecipe.id,
   createdAt: dbRecipe.created_at,
+  type: dbRecipe.type,
   meal: dbRecipe.meal,
   title: dbRecipe.title,
   description: dbRecipe.description,
@@ -592,6 +593,7 @@ const mapRecipeToDb = (recipe: Partial<Recipe>): any => {
   const dbRecipe: any = {};
   if (recipe.id !== undefined) dbRecipe.id = recipe.id;
   if (recipe.createdAt !== undefined) dbRecipe.created_at = recipe.createdAt;
+  if (recipe.type !== undefined) dbRecipe.type = recipe.type;
   if (recipe.meal !== undefined) dbRecipe.meal = recipe.meal;
   if (recipe.title !== undefined) dbRecipe.title = recipe.title;
   if (recipe.description !== undefined) dbRecipe.description = recipe.description;
@@ -628,6 +630,17 @@ export const recipeQueries = {
       .from('recipes')
       .select('*')
       .eq('meal', meal)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data.map(mapRecipeFromDb);
+  },
+
+  getByType: async (type: string) => {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('type', type)
       .order('created_at', { ascending: false });
     
     if (error) throw error;

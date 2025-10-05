@@ -90,6 +90,7 @@ export const weightRoomVideos = pgTable("weight_room_videos", {
 export const recipes = pgTable("recipes", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
+  type: text("type").notNull(),
   meal: text("meal").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
