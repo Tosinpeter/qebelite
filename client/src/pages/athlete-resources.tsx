@@ -271,7 +271,7 @@ export default function AthleteResources() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="overflow-hidden">
               <Skeleton className="h-48 w-full" />
@@ -284,7 +284,7 @@ export default function AthleteResources() {
           ))}
         </div>
       ) : (resources && resources.length > 0) ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
           {resources.map((resource) => (
             <Card key={resource.id} className="overflow-hidden hover-elevate" data-testid={`resource-item-${resource.id}`}>
               {resource.image ? (
