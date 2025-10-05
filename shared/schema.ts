@@ -79,6 +79,16 @@ export const weightRoomCollections = pgTable("weight_room_collections", {
   image: text("image").notNull(),
 });
 
+export const weightRoomVideos = pgTable("weight_room_videos", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  collectionId: varchar("collection_id").notNull().references(() => weightRoomCollections.id, { onDelete: 'cascade' }),
+  title: text("title").notNull(),
+  videoUrl: text("video_url").notNull(),
+  thumbnailUrl: text("thumbnail_url"),
+  duration: integer("duration"),
+  position: integer("position").notNull(),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const updateUserSchema = insertUserSchema.partial();
 export const insertHuddleSchema = createInsertSchema(huddles).omit({ id: true });
@@ -91,6 +101,7 @@ export const updateHomeSliderSchema = insertHomeSliderSchema.partial();
 export const insertHomeWidgetItemSchema = createInsertSchema(homeWidget).omit({ id: true, createdAt: true });
 export const updateHomeWidgetItemSchema = insertHomeWidgetItemSchema.partial();
 export const insertWeightRoomCollectionSchema = createInsertSchema(weightRoomCollections).omit({ id: true });
+export const insertWeightRoomVideoSchema = createInsertSchema(weightRoomVideos).omit({ id: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -108,3 +119,5 @@ export type HomeWidgetItem = typeof homeWidget.$inferSelect;
 export type InsertHomeWidgetItem = z.infer<typeof insertHomeWidgetItemSchema>;
 export type WeightRoomCollection = typeof weightRoomCollections.$inferSelect;
 export type InsertWeightRoomCollection = z.infer<typeof insertWeightRoomCollectionSchema>;
+export type WeightRoomVideo = typeof weightRoomVideos.$inferSelect;
+export type InsertWeightRoomVideo = z.infer<typeof insertWeightRoomVideoSchema>;

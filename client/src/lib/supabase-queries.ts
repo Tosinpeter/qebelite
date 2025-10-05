@@ -7,7 +7,8 @@ import type {
   HomeWidget,
   HomeSlide,
   HomeWidgetItem,
-  WeightRoomCollection
+  WeightRoomCollection,
+  WeightRoomVideo
 } from '@shared/schema';
 
 const mapUserFromDb = (dbUser: any): User => ({
@@ -482,6 +483,96 @@ export const weightRoomQueries = {
   delete: async (id: string) => {
     const { error } = await supabase
       .from('weight_room_collections')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+const mapWeightRoomVideoFromDb = (dbVideo: any): WeightRoomVideo => ({
+  id: dbVideo.id,
+  collectionId: dbVideo.collection_id,
+  title: dbVideo.title,
+  videoUrl: dbVideo.video_url,
+  thumbnailUrl: dbVideo.thumbnail_url,
+  duration: dbVideo.duration,
+  position: dbVideo.position,
+});
+
+const mapWeightRoomVideoToDb = (video: Partial<WeightRoomVideo>): any => {
+  const dbVideo: any = {};
+  if (video.id !== undefined) dbVideo.id = video.id;
+  if (video.collectionId !== undefined) dbVideo.collection_id = video.collectionId;
+  if (video.title !== undefined) dbVideo.title = video.title;
+  if (video.videoUrl !== undefined) dbVideo.video_url = video.videoUrl;
+  if (video.thumbnailUrl !== undefined) dbVideo.thumbnail_url = video.thumbnailUrl;
+  if (video.duration !== undefined) dbVideo.duration = video.duration;
+  if (video.position !== undefined) dbVideo.position = video.position;
+  return dbVideo;
+};
+
+export const weightRoomVideoQueries = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('weight_room_videos')
+      .select('*')
+      .order('position', { ascending: true });
+    
+    if (error) throw error;
+    return data.map(mapWeightRoomVideoFromDb);
+  },
+
+  getByCollectionId: async (collectionId: string) => {
+    const { data, error } = await supabase
+      .from('weight_room_videos')
+      .select('*')
+      .eq('collection_id', collectionId)
+      .order('position', { ascending: true });
+    
+    if (error) throw error;
+    return data.map(mapWeightRoomVideoFromDb);
+  },
+
+  getById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('weight_room_videos')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return mapWeightRoomVideoFromDb(data);
+  },
+
+  create: async (video: Partial<WeightRoomVideo>) => {
+    const dbVideo = mapWeightRoomVideoToDb(video);
+    const { data, error } = await supabase
+      .from('weight_room_videos')
+      .insert(dbVideo)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapWeightRoomVideoFromDb(data);
+  },
+
+  update: async (id: string, updates: Partial<WeightRoomVideo>) => {
+    const dbUpdates = mapWeightRoomVideoToDb(updates);
+    const { data, error } = await supabase
+      .from('weight_room_videos')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapWeightRoomVideoFromDb(data);
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('weight_room_videos')
       .delete()
       .eq('id', id);
     
