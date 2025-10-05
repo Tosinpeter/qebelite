@@ -62,9 +62,10 @@ export const userQueries = {
 
   create: async (user: Partial<User>) => {
     const dbUser = mapUserToDb(user);
+    // Use upsert to handle cases where auth trigger already created profile
     const { data, error } = await supabase
       .from('user_profiles')
-      .insert(dbUser)
+      .upsert(dbUser, { onConflict: 'id' })
       .select()
       .single();
     
