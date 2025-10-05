@@ -8,7 +8,15 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Bell, Search, Menu } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Bell, Search, Menu, LogOut, User } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import UserManagement from "@/pages/user-management";
@@ -112,9 +120,35 @@ export default function App() {
                 <Button variant="ghost" size="icon" data-testid="button-notifications">
                   <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                 </Button>
-                <Avatar>
-                  <AvatarFallback className="bg-primary text-primary-foreground">AD</AvatarFallback>
-                </Avatar>
+                <ThemeToggle />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-10 w-10 rounded-full" data-testid="button-user-menu">
+                      <Avatar>
+                        <AvatarFallback className="bg-primary text-primary-foreground">AD</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem data-testid="menu-item-profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        setIsAuthenticated(false);
+                      }}
+                      data-testid="menu-item-logout"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </header>
             <main className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900">
