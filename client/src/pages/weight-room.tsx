@@ -15,14 +15,9 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-type Collection = {
-  id: string;
-  name: string;
-  description: string;
-  exercises: string[];
-  videoCount: number;
-};
+import { useQuery } from "@tanstack/react-query";
+import { weightRoomQueries } from "@/lib/supabase-queries";
+import type { WeightRoomCollection } from "@shared/schema";
 
 type Video = {
   id: string;
@@ -35,29 +30,10 @@ export default function WeightRoom() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("collections");
 
-  const collections: Collection[] = [
-    {
-      id: "1",
-      name: "Upper Body Strength",
-      description: "Build upper body muscle and strength",
-      exercises: ["Bench Press", "Pull-ups", "Shoulder Press", "Rows"],
-      videoCount: 8
-    },
-    {
-      id: "2",
-      name: "Lower Body Power",
-      description: "Develop leg strength and explosiveness",
-      exercises: ["Squats", "Deadlifts", "Lunges", "Leg Press"],
-      videoCount: 10
-    },
-    {
-      id: "3",
-      name: "Core Foundation",
-      description: "Essential core stability exercises",
-      exercises: ["Planks", "Dead Bugs", "Bird Dogs", "Ab Rollouts"],
-      videoCount: 6
-    },
-  ];
+  const { data: collections = [], isLoading } = useQuery<WeightRoomCollection[]>({
+    queryKey: ['weight-room-collections'],
+    queryFn: weightRoomQueries.getAll,
+  });
 
   const trainingVideos: Video[] = [
     { id: "1", title: "Proper Squat Form", category: "Technique", duration: 420 },
@@ -96,41 +72,50 @@ export default function WeightRoom() {
         </TabsList>
 
         <TabsContent value="collections" className="space-y-4 mt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {collections.map((collection) => (
-              <Card key={collection.id} className="hover-elevate" data-testid={`collection-item-${collection.id}`}>
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <Dumbbell className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">{collection.name}</CardTitle>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">Loading collections...</p>
+            </div>
+          ) : collections.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">No collections found. Click "Add Content" to create one.</p>
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {collections.map((collection) => (
+                <Card key={collection.id} className="hover-elevate" data-testid={`collection-item-${collection.id}`}>
+                  <CardHeader className="p-0">
+                    <div className="aspect-video bg-muted rounded-t-md overflow-hidden">
+                      <img 
+                        src={collection.image} 
+                        alt={collection.title}
+                        className="w-full h-full object-cover"
+                        data-testid={`img-collection-${collection.id}`}
+                      />
                     </div>
-                    <Badge>{collection.videoCount} videos</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-3">
-                    {collection.description}
-                  </p>
-                  <div className="space-y-1 mb-4">
-                    {collection.exercises.map((exercise, i) => (
-                      <div key={i} className="text-xs p-2 bg-muted/50 rounded">
-                        {exercise}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" data-testid={`button-edit-collection-${collection.id}`}>
-                      Edit
-                    </Button>
-                    <Button size="sm" variant="ghost" data-testid={`button-view-collection-${collection.id}`}>
-                      View
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <CardTitle className="text-lg">{collection.title}</CardTitle>
+                      {collection.subtitle && (
+                        <p className="text-sm text-muted-foreground">
+                          {collection.subtitle}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" data-testid={`button-edit-collection-${collection.id}`}>
+                        Edit
+                      </Button>
+                      <Button size="sm" variant="ghost" data-testid={`button-view-collection-${collection.id}`}>
+                        View
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="videos" className="space-y-4 mt-6">
