@@ -298,48 +298,52 @@ export default function UserManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="age">Age</Label>
-                <Input 
-                  id="age" 
-                  placeholder="25" 
-                  value={formData.age}
-                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                  data-testid="input-user-age" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="height">Height</Label>
-                <Input 
-                  id="height" 
-                  placeholder="5'10&quot;" 
-                  value={formData.height}
-                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                  data-testid="input-user-height" 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight</Label>
-                <Input 
-                  id="weight" 
-                  placeholder="170 lbs" 
-                  value={formData.weight}
-                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                  data-testid="input-user-weight" 
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="recipePreference">Recipe Preference</Label>
-              <Input 
-                id="recipePreference" 
-                placeholder="Vegan, Low Carb, etc." 
-                value={formData.recipePreference}
-                onChange={(e) => setFormData({ ...formData, recipePreference: e.target.value })}
-                data-testid="input-user-recipe" 
-              />
-            </div>
+            {formData.role !== "admin" && (
+              <>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="age">Age</Label>
+                    <Input 
+                      id="age" 
+                      placeholder="25" 
+                      value={formData.age}
+                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                      data-testid="input-user-age" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="height">Height</Label>
+                    <Input 
+                      id="height" 
+                      placeholder="5'10&quot;" 
+                      value={formData.height}
+                      onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                      data-testid="input-user-height" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="weight">Weight</Label>
+                    <Input 
+                      id="weight" 
+                      placeholder="170 lbs" 
+                      value={formData.weight}
+                      onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                      data-testid="input-user-weight" 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recipePreference">Recipe Preference</Label>
+                  <Input 
+                    id="recipePreference" 
+                    placeholder="Vegan, Low Carb, etc." 
+                    value={formData.recipePreference}
+                    onChange={(e) => setFormData({ ...formData, recipePreference: e.target.value })}
+                    data-testid="input-user-recipe" 
+                  />
+                </div>
+              </>
+            )}
             <div className="space-y-2">
               <Label htmlFor="avatarUrl">Avatar URL</Label>
               <Input 
