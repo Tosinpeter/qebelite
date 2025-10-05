@@ -183,13 +183,22 @@ export default function AthleteResources() {
     if (!formData.title.trim() || !formData.description.trim() || !formData.externalUrl.trim()) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields (title, description, external URL)",
         variant: "destructive",
       });
       return;
     }
 
     let imageUrl = formData.image;
+
+    if (!imageFile && !imageUrl.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide an image (upload or URL)",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (imageFile) {
       try {
@@ -262,7 +271,7 @@ export default function AthleteResources() {
       </div>
 
       {isLoading ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="overflow-hidden">
               <Skeleton className="h-48 w-full" />
@@ -275,7 +284,7 @@ export default function AthleteResources() {
           ))}
         </div>
       ) : (resources && resources.length > 0) ? (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {resources.map((resource) => (
             <Card key={resource.id} className="overflow-hidden hover-elevate" data-testid={`resource-item-${resource.id}`}>
               {resource.image ? (
@@ -380,8 +389,8 @@ export default function AthleteResources() {
               <Label>Image</Label>
               
               {imagePreview ? (
-                <div className="relative w-24 h-24 mx-auto">
-                  <div className="h-24 w-24 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
+                <div className="relative w-full h-48 mx-auto">
+                  <div className="h-48 w-full rounded-md overflow-hidden border bg-muted flex items-center justify-center">
                     <img 
                       src={imagePreview} 
                       alt="Preview" 
@@ -395,7 +404,7 @@ export default function AthleteResources() {
                     type="button"
                     size="sm"
                     variant="destructive"
-                    className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
+                    className="absolute top-2 right-2 h-8 w-8 rounded-md p-0"
                     onClick={handleRemoveImage}
                     data-testid="button-remove-image"
                   >
