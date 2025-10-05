@@ -231,6 +231,15 @@ export default function UserManagement() {
       });
     } else {
       try {
+        if (!formData.email || !formData.password) {
+          toast({
+            variant: "destructive",
+            title: "Missing required fields",
+            description: "Email and password are required",
+          });
+          return;
+        }
+
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -241,7 +250,13 @@ export default function UserManagement() {
           }
         });
 
-        if (authError) throw authError;
+        if (authError) {
+          let errorMessage = authError.message;
+          if (errorMessage.includes('already registered') || errorMessage.includes('already exists')) {
+            errorMessage = `A user with email ${formData.email} is already registered`;
+          }
+          throw new Error(errorMessage);
+        }
         
         if (authData.user) {
           createMutation.mutate({
@@ -258,7 +273,7 @@ export default function UserManagement() {
         toast({
           variant: "destructive",
           title: "Error creating user",
-          description: error.message,
+          description: error.message || "Failed to create user",
         });
       }
     }
