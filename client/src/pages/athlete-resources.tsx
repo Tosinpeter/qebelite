@@ -435,22 +435,6 @@ export default function AthleteResources() {
                   />
                 </div>
               )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="image" className="text-xs text-muted-foreground">Or paste image URL</Label>
-                <Input 
-                  id="image" 
-                  placeholder="https://..." 
-                  value={formData.image}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, image: e.target.value }));
-                    if (e.target.value) {
-                      setImagePreview(e.target.value);
-                    }
-                  }}
-                  data-testid="input-resource-image" 
-                />
-              </div>
             </div>
 
             <div className="space-y-2">
