@@ -16,7 +16,7 @@ import { GripVertical, Eye, EyeOff, Plus, Edit, Trash2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { HomeSlide, HomeWidget } from "@shared/schema";
+import type { HomeSlide, HomeWidget, HomeWidgetItem } from "@shared/schema";
 import { supabase } from "@/lib/supabase";
 import { Upload } from "lucide-react";
 
@@ -31,13 +31,27 @@ export default function HomeSettings() {
     queryKey: ["/api/home-slider"],
   });
 
+  const { data: widgetItems = [], isLoading: widgetItemsLoading } = useQuery<HomeWidgetItem[]>({
+    queryKey: ["/api/home-widget-items"],
+  });
+
   const [isSlideDialogOpen, setIsSlideDialogOpen] = useState(false);
+  const [isWidgetDialogOpen, setIsWidgetDialogOpen] = useState(false);
   const [editingSlide, setEditingSlide] = useState<HomeSlide | null>(null);
   const [slideForm, setSlideForm] = useState({
     position: 0,
     imageUrl: "",
     redirectUrl: "",
     text: "",
+  });
+
+  const [editingWidget, setEditingWidget] = useState<HomeWidgetItem | null>(null);
+  const [widgetForm, setWidgetForm] = useState({
+    position: 0,
+    image: "",
+    title: "",
+    subtitle: "",
+    redirectUrl: "",
   });
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -82,6 +96,41 @@ export default function HomeSettings() {
       apiRequest("PATCH", `/api/home-widgets/${id}`, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/home-widgets"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const createWidgetItemMutation = useMutation({
+    mutationFn: (data: { position: number; image: string; title: string; subtitle?: string; redirectUrl: string }) =>
+      apiRequest("POST", "/api/home-widget-items", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/home-widget-items"] });
+      toast({ title: "Widget created successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateWidgetItemMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<HomeWidgetItem> }) =>
+      apiRequest("PATCH", `/api/home-widget-items/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/home-widget-items"] });
+      toast({ title: "Widget updated successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteWidgetItemMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/home-widget-items/${id}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/home-widget-items"] });
+      toast({ title: "Widget deleted successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -146,6 +195,40 @@ export default function HomeSettings() {
 
   const handleDeleteSlide = (id: string) => {
     deleteSlideMutation.mutate(id);
+  };
+
+  const handleCreateWidget = () => {
+    setEditingWidget(null);
+    setWidgetForm({ position: widgetItems.length, image: "", title: "", subtitle: "", redirectUrl: "" });
+    setIsWidgetDialogOpen(true);
+  };
+
+  const handleEditWidget = (widget: HomeWidgetItem) => {
+    setEditingWidget(widget);
+    setWidgetForm({
+      position: widget.position,
+      image: widget.image,
+      title: widget.title,
+      subtitle: widget.subtitle || "",
+      redirectUrl: widget.redirectUrl,
+    });
+    setIsWidgetDialogOpen(true);
+  };
+
+  const handleDeleteWidget = (id: string) => {
+    deleteWidgetItemMutation.mutate(id);
+  };
+
+  const handleSaveWidget = () => {
+    if (editingWidget) {
+      updateWidgetItemMutation.mutate({
+        id: editingWidget.id,
+        data: widgetForm,
+      });
+    } else {
+      createWidgetItemMutation.mutate(widgetForm);
+    }
+    setIsWidgetDialogOpen(false);
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -338,80 +421,91 @@ export default function HomeSettings() {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Widget Configuration</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Drag widgets to reorder them. Toggle visibility with the eye icon.
-            </p>
-            <div className="space-y-2">
-              {widgets.map((widget) => (
-                <div
-                  key={widget.id}
-                  draggable
-                  onDragStart={() => handleDragStart(widget)}
-                  onDragOver={handleDragOver}
-                  onDrop={() => handleDrop(widget)}
-                  className={`flex items-center gap-3 p-4 rounded-md border hover:bg-gray-50 dark:hover:bg-gray-700 cursor-move transition-colors ${
-                    !widget.visible ? "opacity-50" : ""
-                  }`}
-                  data-testid={`widget-item-${widget.id}`}
-                >
-                  <GripVertical className="h-5 w-5 text-gray-400" />
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900 dark:text-white">{widget.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400">Position {widget.position + 1}</div>
-                  </div>
-                  <Badge variant="secondary">{widget.type}</Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleVisibility(widget)}
-                    data-testid={`button-toggle-${widget.id}`}
-                  >
-                    {widget.visible ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-              ))}
+      <Card>
+        <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">Home Widget</CardTitle>
+            <Button onClick={handleCreateWidget} data-testid="button-create-widget">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Widget
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          {widgetItems.length === 0 ? (
+            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
+              No widgets configured. Click "Add Widget" to create one.
             </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              This is how the home page will appear to users
-            </p>
-            <div className="space-y-3 bg-gray-100 dark:bg-gray-800 p-4 rounded-md">
-              {widgets
-                .filter(w => w.visible)
-                .sort((a, b) => a.position - b.position)
-                .map((widget) => (
-                  <div
-                    key={widget.id}
-                    className="p-3 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 text-sm"
-                    data-testid={`preview-widget-${widget.id}`}
-                  >
-                    <div className="font-medium text-gray-900 dark:text-white">{widget.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {widget.type} widget
-                    </div>
-                  </div>
-                ))}
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3">Position</th>
+                    <th className="px-6 py-3">Image</th>
+                    <th className="px-6 py-3">Title</th>
+                    <th className="px-6 py-3">Subtitle</th>
+                    <th className="px-6 py-3">Redirect URL</th>
+                    <th className="px-6 py-3">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {widgetItems.sort((a, b) => a.position - b.position).map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
+                      data-testid={`widget-row-${item.id}`}
+                    >
+                      <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
+                        {item.position}
+                      </td>
+                      <td className="px-6 py-4">
+                        <img 
+                          src={item.image} 
+                          alt={item.title} 
+                          className="h-16 w-24 object-cover rounded border border-gray-200 dark:border-gray-600"
+                          data-testid={`img-widget-${item.id}`}
+                        />
+                      </td>
+                      <td className="px-6 py-4 text-gray-900 dark:text-white max-w-[200px]">
+                        {item.title}
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400 max-w-[200px]">
+                        {item.subtitle || "-"}
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400 max-w-[250px]">
+                        {item.redirectUrl}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditWidget(item)}
+                            data-testid={`button-edit-widget-${item.id}`}
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteWidget(item.id)}
+                            data-testid={`button-delete-widget-${item.id}`}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
 
       <Dialog open={isSlideDialogOpen} onOpenChange={setIsSlideDialogOpen}>
         <DialogContent data-testid="dialog-slide-form">
@@ -498,6 +592,83 @@ export default function HomeSettings() {
             </Button>
             <Button onClick={handleSaveSlide} data-testid="button-save-slide">
               {editingSlide ? "Save Changes" : "Create Slide"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isWidgetDialogOpen} onOpenChange={setIsWidgetDialogOpen}>
+        <DialogContent data-testid="dialog-widget-form">
+          <DialogHeader>
+            <DialogTitle>{editingWidget ? "Edit Widget" : "Create New Widget"}</DialogTitle>
+            <DialogDescription>
+              {editingWidget ? "Update widget details" : "Add a new widget to the home page"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="widget-position">Position</Label>
+              <Input
+                id="widget-position"
+                type="number"
+                min="0"
+                placeholder="0"
+                value={widgetForm.position}
+                onChange={(e) => setWidgetForm({ ...widgetForm, position: parseInt(e.target.value) || 0 })}
+                data-testid="input-widget-position"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="widget-title">Title</Label>
+              <Input
+                id="widget-title"
+                type="text"
+                placeholder="Widget title"
+                value={widgetForm.title}
+                onChange={(e) => setWidgetForm({ ...widgetForm, title: e.target.value })}
+                data-testid="input-widget-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="widget-subtitle">Subtitle</Label>
+              <Input
+                id="widget-subtitle"
+                type="text"
+                placeholder="Widget subtitle (optional)"
+                value={widgetForm.subtitle}
+                onChange={(e) => setWidgetForm({ ...widgetForm, subtitle: e.target.value })}
+                data-testid="input-widget-subtitle"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="widget-image">Image URL</Label>
+              <Input
+                id="widget-image"
+                type="url"
+                placeholder="https://example.com/widget.jpg"
+                value={widgetForm.image}
+                onChange={(e) => setWidgetForm({ ...widgetForm, image: e.target.value })}
+                data-testid="input-widget-image"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="widget-redirect">Redirect URL</Label>
+              <Input
+                id="widget-redirect"
+                type="url"
+                placeholder="https://example.com/destination"
+                value={widgetForm.redirectUrl}
+                onChange={(e) => setWidgetForm({ ...widgetForm, redirectUrl: e.target.value })}
+                data-testid="input-widget-redirect"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsWidgetDialogOpen(false)} data-testid="button-widget-cancel">
+              Cancel
+            </Button>
+            <Button onClick={handleSaveWidget} data-testid="button-save-widget">
+              {editingWidget ? "Save Changes" : "Create Widget"}
             </Button>
           </DialogFooter>
         </DialogContent>
