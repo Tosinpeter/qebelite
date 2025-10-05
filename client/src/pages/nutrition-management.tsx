@@ -269,7 +269,12 @@ export default function NutritionManagement() {
       try {
         setIsUploadingImage(true);
         const timestamp = Date.now();
-        const fileName = `recipe-${timestamp}-${imageFile.name}`;
+        // Sanitize filename: remove spaces, special chars, keep only alphanumeric, dots, and hyphens
+        const sanitizedName = imageFile.name
+          .toLowerCase()
+          .replace(/\s+/g, '-')
+          .replace(/[^a-z0-9.-]/g, '');
+        const fileName = `recipe-${timestamp}-${sanitizedName}`;
         const filePath = `recipes/${fileName}`;
 
         await storageHelpers.uploadFile('recipe-images', filePath, imageFile);
