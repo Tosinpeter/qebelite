@@ -1,5 +1,6 @@
 import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import logoImage from "@assets/logo_1759665184540.png";
 
 const menuGroups = [
   {
@@ -63,11 +64,11 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 pt-[18px] pb-[18px]">
           <div className="flex items-center gap-2 px-3">
-            <svg className="w-8 h-8" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M25.2 0H7.8C3.49218 0 0 3.49218 0 7.8V25.2C0 29.5078 3.49218 33 7.8 33H25.2C29.5078 33 33 29.5078 33 25.2V7.8C33 3.49218 29.5078 0 25.2 0Z" fill="currentColor" className="text-primary"/>
-              <path d="M23.1 16.5L16.5 9.9L9.9 16.5L16.5 23.1L23.1 16.5Z" fill="white"/>
-            </svg>
-            <span className="text-xl font-semibold text-gray-900 dark:text-white">QEB Elite</span>
+            <img 
+              src={logoImage} 
+              alt="QEB Elite Logo" 
+              className="h-8 w-auto"
+            />
           </div>
         </div>
         
