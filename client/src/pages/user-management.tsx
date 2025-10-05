@@ -134,6 +134,8 @@ export default function UserManagement() {
                 <tr>
                   <th className="px-6 py-3">User</th>
                   <th className="px-6 py-3">Email</th>
+                  <th className="px-6 py-3">Age</th>
+                  <th className="px-6 py-3">Weight</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
@@ -159,6 +161,12 @@ export default function UserManagement() {
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {user.email || user.id}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.age || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.weight || "—"}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
@@ -186,7 +194,7 @@ export default function UserManagement() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>
