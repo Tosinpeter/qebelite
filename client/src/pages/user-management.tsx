@@ -32,6 +32,8 @@ export default function UserManagement() {
     role: "user",
     password: "",
     avatarUrl: "",
+    age: "",
+    weight: "",
   });
 
   const { toast } = useToast();
@@ -90,6 +92,8 @@ export default function UserManagement() {
       role: "user",
       password: "",
       avatarUrl: "",
+      age: "",
+      weight: "",
     });
     setIsDialogOpen(true);
   };
@@ -102,6 +106,8 @@ export default function UserManagement() {
       role: user.role || "user",
       password: "",
       avatarUrl: user.avatarUrl || "",
+      age: user.age || "",
+      weight: user.weight || "",
     });
     setIsDialogOpen(true);
   };
@@ -194,18 +200,44 @@ export default function UserManagement() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingUser) {
       updateMutation.mutate({
         id: editingUser.id,
         data: formData,
       });
     } else {
-      const userId = crypto.randomUUID();
-      createMutation.mutate({
-        id: userId,
-        ...formData,
-      });
+      try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              display_name: formData.displayName,
+            }
+          }
+        });
+
+        if (authError) throw authError;
+        
+        if (authData.user) {
+          createMutation.mutate({
+            id: authData.user.id,
+            email: formData.email,
+            displayName: formData.displayName,
+            role: formData.role,
+            avatarUrl: formData.avatarUrl,
+            age: formData.age,
+            weight: formData.weight,
+          });
+        }
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error creating user",
+          description: error.message,
+        });
+      }
     }
   };
 
@@ -253,6 +285,8 @@ export default function UserManagement() {
                   <th className="px-6 py-3">User</th>
                   <th className="px-6 py-3">Email</th>
                   <th className="px-6 py-3">Role</th>
+                  <th className="px-6 py-3">Age</th>
+                  <th className="px-6 py-3">Weight</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
@@ -284,6 +318,12 @@ export default function UserManagement() {
                         {user.role || "user"}
                       </Badge>
                     </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.age || "—"}
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.weight || "—"}
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Button
@@ -310,7 +350,7 @@ export default function UserManagement() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>
@@ -406,6 +446,28 @@ export default function UserManagement() {
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="age">Age</Label>
+                <Input 
+                  id="age" 
+                  placeholder="25" 
+                  value={formData.age}
+                  onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                  data-testid="input-user-age" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight</Label>
+                <Input 
+                  id="weight" 
+                  placeholder="170 lbs" 
+                  value={formData.weight}
+                  onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
+                  data-testid="input-user-weight" 
+                />
+              </div>
             </div>
             {!editingUser && (
               <div className="space-y-2">
