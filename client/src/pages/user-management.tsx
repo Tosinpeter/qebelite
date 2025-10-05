@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Upload, X } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -19,11 +19,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
+import { supabase } from "@/lib/supabase";
 
 export default function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     displayName: "",
@@ -116,6 +118,88 @@ export default function UserManagement() {
   const handleDelete = (user: User) => {
     if (confirm(`Are you sure you want to delete ${user.displayName || user.id}?`)) {
       deleteMutation.mutate(user.id);
+    }
+  };
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Invalid file type",
+        description: "Please upload an image file",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('user-avatars')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        if (error.message.includes('Bucket not found')) {
+          const { error: bucketError } = await supabase.storage.createBucket('user-avatars', {
+            public: true,
+            fileSizeLimit: 5242880
+          });
+
+          if (bucketError && !bucketError.message.includes('already exists')) {
+            throw bucketError;
+          }
+
+          const { data: retryData, error: retryError } = await supabase.storage
+            .from('user-avatars')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (retryError) throw retryError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('user-avatars')
+            .getPublicUrl(retryData.path);
+
+          setFormData({ ...formData, avatarUrl: publicUrl });
+          toast({
+            title: "Upload successful",
+            description: "Avatar uploaded to storage",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-avatars')
+          .getPublicUrl(data.path);
+
+        setFormData({ ...formData, avatarUrl: publicUrl });
+        toast({
+          title: "Upload successful",
+          description: "Avatar uploaded to storage",
+        });
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message || "Failed to upload avatar",
+      });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -298,6 +382,58 @@ export default function UserManagement() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Avatar</Label>
+              <div className="flex items-start gap-4">
+                {formData.avatarUrl && (
+                  <div className="relative">
+                    <img 
+                      src={formData.avatarUrl} 
+                      alt="Avatar preview" 
+                      className="w-20 h-20 rounded-full object-cover border-2 border-gray-200 dark:border-gray-700"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 hover:bg-red-600 text-white"
+                      onClick={() => setFormData({ ...formData, avatarUrl: "" })}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                )}
+                <div className="flex-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('avatar-file-upload')?.click()}
+                    disabled={isUploading}
+                    data-testid="button-upload-avatar"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {isUploading ? "Uploading..." : formData.avatarUrl ? "Change Avatar" : "Upload Avatar"}
+                  </Button>
+                  <input
+                    id="avatar-file-upload"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarUpload}
+                    className="hidden"
+                    data-testid="input-avatar-file-upload"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    Upload a photo or enter a URL below
+                  </p>
+                  <Input 
+                    placeholder="Or paste image URL" 
+                    value={formData.avatarUrl}
+                    onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
+                    className="mt-2"
+                    data-testid="input-user-avatar-url" 
+                  />
+                </div>
+              </div>
+            </div>
             {formData.role !== "admin" && (
               <>
                 <div className="grid grid-cols-3 gap-4">
@@ -344,16 +480,6 @@ export default function UserManagement() {
                 </div>
               </>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="avatarUrl">Avatar URL</Label>
-              <Input 
-                id="avatarUrl" 
-                placeholder="https://..." 
-                value={formData.avatarUrl}
-                onChange={(e) => setFormData({ ...formData, avatarUrl: e.target.value })}
-                data-testid="input-user-avatar" 
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
