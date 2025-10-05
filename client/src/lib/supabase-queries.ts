@@ -414,15 +414,38 @@ export const homeWidgetItemQueries = {
   }
 };
 
+const mapWeightRoomCollectionFromDb = (dbCollection: any): WeightRoomCollection => ({
+  id: dbCollection.id,
+  title: dbCollection.title,
+  subtitle: dbCollection.subtitle,
+  image: dbCollection.image,
+  name: dbCollection.name,
+  description: dbCollection.description,
+  exercises: dbCollection.exercises,
+  videoIds: dbCollection.video_ids,
+});
+
+const mapWeightRoomCollectionToDb = (collection: Partial<WeightRoomCollection>): any => {
+  const dbCollection: any = {};
+  if (collection.id !== undefined) dbCollection.id = collection.id;
+  if (collection.title !== undefined) dbCollection.title = collection.title;
+  if (collection.subtitle !== undefined) dbCollection.subtitle = collection.subtitle;
+  if (collection.image !== undefined) dbCollection.image = collection.image;
+  if (collection.name !== undefined) dbCollection.name = collection.name;
+  if (collection.description !== undefined) dbCollection.description = collection.description;
+  if (collection.exercises !== undefined) dbCollection.exercises = collection.exercises;
+  if (collection.videoIds !== undefined) dbCollection.video_ids = collection.videoIds;
+  return dbCollection;
+};
+
 export const weightRoomQueries = {
   getAll: async () => {
     const { data, error } = await supabase
       .from('weight_room_collections')
-      .select('*')
-      .order('created_at', { ascending: false });
+      .select('*');
     
     if (error) throw error;
-    return data as WeightRoomCollection[];
+    return data.map(mapWeightRoomCollectionFromDb);
   },
 
   getById: async (id: string) => {
@@ -433,30 +456,32 @@ export const weightRoomQueries = {
       .single();
     
     if (error) throw error;
-    return data as WeightRoomCollection;
+    return mapWeightRoomCollectionFromDb(data);
   },
 
   create: async (collection: Partial<WeightRoomCollection>) => {
+    const dbCollection = mapWeightRoomCollectionToDb(collection);
     const { data, error } = await supabase
       .from('weight_room_collections')
-      .insert(collection)
+      .insert(dbCollection)
       .select()
       .single();
     
     if (error) throw error;
-    return data as WeightRoomCollection;
+    return mapWeightRoomCollectionFromDb(data);
   },
 
   update: async (id: string, updates: Partial<WeightRoomCollection>) => {
+    const dbUpdates = mapWeightRoomCollectionToDb(updates);
     const { data, error } = await supabase
       .from('weight_room_collections')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data as WeightRoomCollection;
+    return mapWeightRoomCollectionFromDb(data);
   },
 
   delete: async (id: string) => {
