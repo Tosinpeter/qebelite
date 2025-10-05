@@ -16,6 +16,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { weightRoomQueries, weightRoomVideoQueries, storageHelpers } from "@/lib/supabase-queries";
@@ -26,6 +33,7 @@ export default function WeightRoom() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("collections");
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string>("all");
   const [editingCollection, setEditingCollection] = useState<WeightRoomCollection | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -174,13 +182,9 @@ export default function WeightRoom() {
     }
   };
 
-  const videosByCollection = videos.reduce((acc, video) => {
-    if (!acc[video.collectionId]) {
-      acc[video.collectionId] = [];
-    }
-    acc[video.collectionId].push(video);
-    return acc;
-  }, {} as Record<string, WeightRoomVideo[]>);
+  const filteredVideos = selectedCollectionId === "all" 
+    ? videos 
+    : videos.filter(v => v.collectionId === selectedCollectionId);
 
   return (
     <div className="space-y-6">
@@ -263,79 +267,75 @@ export default function WeightRoom() {
           )}
         </TabsContent>
 
-        <TabsContent value="videos" className="space-y-6 mt-6">
+        <TabsContent value="videos" className="space-y-4 mt-6">
+          <div className="flex items-center gap-4">
+            <Label htmlFor="collection-filter" className="text-sm font-medium">Filter by Collection:</Label>
+            <Select value={selectedCollectionId} onValueChange={setSelectedCollectionId}>
+              <SelectTrigger className="w-64" data-testid="select-collection-filter">
+                <SelectValue placeholder="Select a collection" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Collections</SelectItem>
+                {collections.map((collection) => (
+                  <SelectItem key={collection.id} value={collection.id}>
+                    {collection.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {videosLoading ? (
             <div className="flex items-center justify-center py-12">
               <p className="text-muted-foreground">Loading videos...</p>
             </div>
-          ) : collections.length === 0 ? (
+          ) : filteredVideos.length === 0 ? (
             <div className="flex items-center justify-center py-12">
-              <p className="text-muted-foreground">No collections found. Create a collection first.</p>
+              <p className="text-muted-foreground">No videos found.</p>
             </div>
           ) : (
-            collections.map((collection) => {
-              const collectionVideos = videosByCollection[collection.id] || [];
-              
-              return (
-                <div key={collection.id} className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold">{collection.title}</h3>
-                    <Badge variant="secondary">{collectionVideos.length} videos</Badge>
-                  </div>
-                  
-                  {collectionVideos.length === 0 ? (
-                    <Card className="p-6">
-                      <p className="text-sm text-muted-foreground text-center">
-                        No videos in this collection yet
-                      </p>
-                    </Card>
-                  ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                      {collectionVideos.map((video) => (
-                        <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
-                          <CardHeader className="p-0">
-                            <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative">
-                              <Play className="h-12 w-12 text-primary" />
-                            </div>
-                          </CardHeader>
-                          <CardContent className="p-4">
-                            <div className="space-y-2">
-                              <div className="font-medium text-sm" data-testid={`text-video-title-${video.id}`}>
-                                {video.title}
-                              </div>
-                              {video.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2">
-                                  {video.description}
-                                </p>
-                              )}
-                            </div>
-                            <div className="mt-3 flex gap-2">
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="flex-1"
-                                onClick={() => window.open(video.videoUrl, '_blank')}
-                                data-testid={`button-watch-${video.id}`}
-                              >
-                                <Play className="h-3 w-3 mr-1" />
-                                Watch
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost"
-                                data-testid={`button-edit-video-${video.id}`}
-                              >
-                                <Edit className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredVideos.map((video) => (
+                <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
+                  <CardHeader className="p-0">
+                    <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative">
+                      <Play className="h-12 w-12 text-primary" />
                     </div>
-                  )}
-                </div>
-              );
-            })
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <div className="font-medium text-sm" data-testid={`text-video-title-${video.id}`}>
+                        {video.title}
+                      </div>
+                      {video.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {video.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="mt-3 flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => window.open(video.videoUrl, '_blank')}
+                        data-testid={`button-watch-${video.id}`}
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        Watch
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        data-testid={`button-edit-video-${video.id}`}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           )}
         </TabsContent>
       </Tabs>
