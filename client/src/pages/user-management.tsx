@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -131,12 +132,8 @@ export default function UserManagement() {
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-gray-700 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3">Display Name</th>
-                  <th className="px-6 py-3">Age</th>
-                  <th className="px-6 py-3">Height</th>
-                  <th className="px-6 py-3">Weight</th>
-                  <th className="px-6 py-3">Recipe Preference</th>
-                  <th className="px-6 py-3">Verified</th>
+                  <th className="px-6 py-3">User</th>
+                  <th className="px-6 py-3">Email</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
@@ -147,57 +144,41 @@ export default function UserManagement() {
                     className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
                     data-testid={`user-row-${user.id}`}
                   >
-                    <td className="px-6 py-4 font-medium text-gray-900 dark:text-white" data-testid={`text-user-name-${user.id}`}>
-                      {user.displayName || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.age || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.height || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.weight || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.recipePreference || "—"}
-                    </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-2">
-                        {user.emailVerified && (
-                          <Badge variant="outline" className="text-xs">
-                            Email
-                          </Badge>
-                        )}
-                        {user.phoneVerified && (
-                          <Badge variant="outline" className="text-xs">
-                            Phone
-                          </Badge>
-                        )}
-                        {!user.emailVerified && !user.phoneVerified && "—"}
+                      <div className="flex items-center gap-3">
+                        <Avatar>
+                          <AvatarImage src={user.avatarUrl || undefined} alt={user.displayName || "User"} />
+                          <AvatarFallback className="bg-primary text-primary-foreground">
+                            {user.displayName ? user.displayName.charAt(0).toUpperCase() : "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium text-gray-900 dark:text-white" data-testid={`text-user-name-${user.id}`}>
+                          {user.displayName || "—"}
+                        </span>
                       </div>
+                    </td>
+                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
+                      {user.id}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleEdit(user)}
                           data-testid={`button-edit-${user.id}`}
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
-                          size="sm"
+                          size="icon"
                           onClick={() => handleDelete(user)}
                           data-testid={`button-delete-${user.id}`}
                           className="text-red-600 hover:text-red-700 hover:bg-red-50"
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
+                          <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </td>
@@ -205,7 +186,7 @@ export default function UserManagement() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>

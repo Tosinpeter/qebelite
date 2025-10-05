@@ -11,8 +11,8 @@ export const users = pgTable("user_profiles", {
   avatarUrl: text("avatar_url"),
   displayName: varchar("display_name", { length: 255 }),
   recipePreference: varchar("recipe_preference", { length: 100 }),
-  emailVerified: boolean("email_verified").notNull().default(false),
-  phoneVerified: boolean("phone_verified").notNull().default(false),
+  emailVerified: boolean("email_verified"),
+  phoneVerified: boolean("phone_verified"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`NOW()`),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`NOW()`),
 });
