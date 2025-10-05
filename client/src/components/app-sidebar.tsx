@@ -69,6 +69,7 @@ export function AppSidebar() {
               alt="QEB Elite Logo" 
               className="h-8 w-auto"
             />
+            <span className="text-xl font-semibold text-gray-900 dark:text-white">QEB Elite</span>
           </div>
         </div>
         
