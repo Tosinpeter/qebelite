@@ -34,14 +34,14 @@ export default function AthleteResources() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingResource, setEditingResource] = useState<AthleteResource | null>(null);
   const [deleteResource, setDeleteResource] = useState<AthleteResource | null>(null);
-  const [iconFile, setIconFile] = useState<File | null>(null);
-  const [iconPreview, setIconPreview] = useState<string>("");
-  const [isUploadingIcon, setIsUploadingIcon] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    icon: "",
+    image: "",
     externalUrl: "",
     position: 0,
   });
@@ -117,12 +117,12 @@ export default function AthleteResources() {
       setFormData({
         title: resource.title,
         description: resource.description,
-        icon: resource.icon,
+        image: resource.image,
         externalUrl: resource.externalUrl,
         position: resource.position,
       });
-      if (resource.icon) {
-        setIconPreview(resource.icon);
+      if (resource.image) {
+        setImagePreview(resource.image);
       }
     } else {
       setEditingResource(null);
@@ -130,53 +130,53 @@ export default function AthleteResources() {
       setFormData({
         title: "",
         description: "",
-        icon: "",
+        image: "",
         externalUrl: "",
         position: nextPosition,
       });
     }
-    setIconFile(null);
+    setImageFile(null);
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingResource(null);
-    setIconFile(null);
-    setIconPreview("");
+    setImageFile(null);
+    setImagePreview("");
     setFormData({
       title: "",
       description: "",
-      icon: "",
+      image: "",
       externalUrl: "",
       position: 0,
     });
   };
 
-  const handleIconFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         toast({
           title: "File too large",
-          description: "Icon must be less than 5MB",
+          description: "Image must be less than 5MB",
           variant: "destructive",
         });
         return;
       }
-      setIconFile(file);
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setIconPreview(reader.result as string);
+        setImagePreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleRemoveIcon = () => {
-    setIconFile(null);
-    setIconPreview("");
-    setFormData(prev => ({ ...prev, icon: "" }));
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setFormData(prev => ({ ...prev, image: "" }));
   };
 
   const handleSubmit = async () => {
@@ -189,46 +189,46 @@ export default function AthleteResources() {
       return;
     }
 
-    let iconUrl = formData.icon;
+    let imageUrl = formData.image;
 
-    if (iconFile) {
+    if (imageFile) {
       try {
-        setIsUploadingIcon(true);
-        const fileExt = iconFile.name.split('.').pop();
-        const sanitizedFileName = iconFile.name
+        setIsUploadingImage(true);
+        const fileExt = imageFile.name.split('.').pop();
+        const sanitizedFileName = imageFile.name
           .replace(/\s+/g, '-')
           .replace(/[^a-zA-Z0-9.-]/g, '');
         const fileName = `${Date.now()}-${sanitizedFileName}`;
         const filePath = `athlete-resources/${fileName}`;
 
-        await storageHelpers.uploadFile('recipe-images', filePath, iconFile);
-        iconUrl = storageHelpers.getPublicUrl('recipe-images', filePath);
+        await storageHelpers.uploadFile('recipe-images', filePath, imageFile);
+        imageUrl = storageHelpers.getPublicUrl('recipe-images', filePath);
       } catch (error: any) {
         if (error.message?.includes('Bucket not found')) {
           toast({
             title: "Storage Setup Required",
-            description: "The recipe-images bucket is used for athlete resource icons. Please create it in Supabase Dashboard: Storage → New Bucket → Name: recipe-images (make it public).",
+            description: "The recipe-images bucket is used for athlete resource images. Please create it in Supabase Dashboard: Storage → New Bucket → Name: recipe-images (make it public).",
             variant: "destructive",
             duration: 10000,
           });
         } else {
           toast({
             title: "Upload Failed",
-            description: error.message || "Failed to upload icon",
+            description: error.message || "Failed to upload image",
             variant: "destructive",
           });
         }
-        setIsUploadingIcon(false);
+        setIsUploadingImage(false);
         return;
       } finally {
-        setIsUploadingIcon(false);
+        setIsUploadingImage(false);
       }
     }
 
     const resourceData: Partial<AthleteResource> = {
       title: formData.title.trim(),
       description: formData.description.trim(),
-      icon: iconUrl,
+      image: imageUrl,
       externalUrl: formData.externalUrl.trim(),
       position: formData.position,
     };
@@ -280,10 +280,10 @@ export default function AthleteResources() {
             <Card key={resource.id} className="hover-elevate" data-testid={`resource-item-${resource.id}`}>
               <CardContent className="p-6 text-center space-y-4">
                 <div className="flex justify-center">
-                  {resource.icon ? (
+                  {resource.image ? (
                     <div className="h-16 w-16 rounded-full overflow-hidden bg-muted flex items-center justify-center">
                       <img 
-                        src={resource.icon} 
+                        src={resource.image} 
                         alt={resource.title}
                         className="h-full w-full object-cover"
                         onError={(e) => {
@@ -351,7 +351,7 @@ export default function AthleteResources() {
           <DialogHeader>
             <DialogTitle>{editingResource ? "Edit Resource" : "Add Athlete Resource"}</DialogTitle>
             <DialogDescription>
-              {editingResource ? "Update the resource details" : "Add a new resource with icon, description, and external link"}
+              {editingResource ? "Update the resource details" : "Add a new resource with image, description, and external link"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -379,13 +379,13 @@ export default function AthleteResources() {
             </div>
 
             <div className="space-y-2">
-              <Label>Icon</Label>
+              <Label>Image</Label>
               
-              {iconPreview ? (
+              {imagePreview ? (
                 <div className="relative w-24 h-24 mx-auto">
                   <div className="h-24 w-24 rounded-full overflow-hidden border bg-muted flex items-center justify-center">
                     <img 
-                      src={iconPreview} 
+                      src={imagePreview} 
                       alt="Preview" 
                       className="h-full w-full object-cover"
                       onError={(e) => {
@@ -398,8 +398,8 @@ export default function AthleteResources() {
                     size="sm"
                     variant="destructive"
                     className="absolute -top-2 -right-2 h-6 w-6 rounded-full p-0"
-                    onClick={handleRemoveIcon}
-                    data-testid="button-remove-icon"
+                    onClick={handleRemoveImage}
+                    data-testid="button-remove-image"
                   >
                     ×
                   </Button>
@@ -407,41 +407,41 @@ export default function AthleteResources() {
               ) : (
                 <div className="border-2 border-dashed rounded-md p-6 text-center">
                   <BookOpen className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-3">Upload an icon or paste a URL</p>
+                  <p className="text-sm text-muted-foreground mb-3">Upload an image or paste a URL</p>
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    onClick={() => document.getElementById('icon-file-input')?.click()}
-                    data-testid="button-upload-icon"
+                    onClick={() => document.getElementById('image-file-input')?.click()}
+                    data-testid="button-upload-image"
                   >
                     <Upload className="h-3 w-3 mr-1" />
                     Upload
                   </Button>
                   <input
-                    id="icon-file-input"
+                    id="image-file-input"
                     type="file"
                     accept="image/*"
-                    onChange={handleIconFileChange}
+                    onChange={handleImageFileChange}
                     className="hidden"
-                    data-testid="input-icon-file"
+                    data-testid="input-image-file"
                   />
                 </div>
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="icon" className="text-xs text-muted-foreground">Or paste icon URL</Label>
+                <Label htmlFor="image" className="text-xs text-muted-foreground">Or paste image URL</Label>
                 <Input 
-                  id="icon" 
+                  id="image" 
                   placeholder="https://..." 
-                  value={formData.icon}
+                  value={formData.image}
                   onChange={(e) => {
-                    setFormData(prev => ({ ...prev, icon: e.target.value }));
+                    setFormData(prev => ({ ...prev, image: e.target.value }));
                     if (e.target.value) {
-                      setIconPreview(e.target.value);
+                      setImagePreview(e.target.value);
                     }
                   }}
-                  data-testid="input-resource-icon" 
+                  data-testid="input-resource-image" 
                 />
               </div>
             </div>
@@ -475,10 +475,10 @@ export default function AthleteResources() {
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={createMutation.isPending || updateMutation.isPending || isUploadingIcon}
+              disabled={createMutation.isPending || updateMutation.isPending || isUploadingImage}
               data-testid="button-save-resource"
             >
-              {isUploadingIcon ? "Uploading..." : (createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingResource ? "Update" : "Create"))}
+              {isUploadingImage ? "Uploading..." : (createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingResource ? "Update" : "Create"))}
             </Button>
           </DialogFooter>
         </DialogContent>

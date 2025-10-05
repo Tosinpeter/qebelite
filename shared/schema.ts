@@ -115,7 +115,7 @@ export const athleteResources = pgTable("athlete_resources", {
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  icon: text("icon").notNull(),
+  image: text("image").notNull(),
   externalUrl: text("external_url").notNull(),
   position: integer("position").notNull().default(0),
 });

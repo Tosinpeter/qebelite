@@ -76,7 +76,7 @@ The Supabase-only architecture eliminates the need for a custom backend server, 
 4. **Training Videos** - Video library with categorization, duration, and thumbnails
 5. **Home Widgets** - Configurable dashboard widgets with positioning and visibility controls
 6. **Home Banners** - Promotional banners with images and redirect URLs
-7. **Athlete Resources** - External resource links with icon images, descriptions, and positioning
+7. **Athlete Resources** - External resource links with images, descriptions, and positioning
 
 **Schema Design Decisions:**
 - UUID primary keys (`gen_random_uuid()`) for distributed systems compatibility

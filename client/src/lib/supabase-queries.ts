@@ -797,7 +797,7 @@ const mapAthleteResourceFromDb = (data: any): AthleteResource => ({
   createdAt: data.created_at,
   title: data.title,
   description: data.description,
-  icon: data.icon,
+  image: data.image,
   externalUrl: data.external_url,
   position: data.position,
 });
@@ -805,7 +805,7 @@ const mapAthleteResourceFromDb = (data: any): AthleteResource => ({
 const mapAthleteResourceToDb = (resource: Partial<AthleteResource>) => ({
   title: resource.title,
   description: resource.description,
-  icon: resource.icon,
+  image: resource.image,
   external_url: resource.externalUrl,
   position: resource.position,
 });
