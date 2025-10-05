@@ -61,6 +61,16 @@ export const homeSlider = pgTable("home_slider", {
   text: text("text"),
 });
 
+export const homeWidget = pgTable("home_widget", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  position: integer("position").notNull(),
+  image: text("image").notNull(),
+  title: text("title").notNull(),
+  subtitle: text("subtitle"),
+  redirectUrl: text("redirect_url").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`NOW()`),
+});
+
 export const weightRoomCollections = pgTable("weight_room_collections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
@@ -78,6 +88,8 @@ export const insertHomeWidgetSchema = createInsertSchema(homeWidgets).omit({ id:
 export const updateHomeWidgetSchema = insertHomeWidgetSchema.partial();
 export const insertHomeSliderSchema = createInsertSchema(homeSlider).omit({ id: true });
 export const updateHomeSliderSchema = insertHomeSliderSchema.partial();
+export const insertHomeWidgetItemSchema = createInsertSchema(homeWidget).omit({ id: true, createdAt: true });
+export const updateHomeWidgetItemSchema = insertHomeWidgetItemSchema.partial();
 export const insertWeightRoomCollectionSchema = createInsertSchema(weightRoomCollections).omit({ id: true });
 
 export type User = typeof users.$inferSelect;
@@ -92,5 +104,7 @@ export type HomeWidget = typeof homeWidgets.$inferSelect;
 export type InsertHomeWidget = z.infer<typeof insertHomeWidgetSchema>;
 export type HomeSlide = typeof homeSlider.$inferSelect;
 export type InsertHomeSlide = z.infer<typeof insertHomeSliderSchema>;
+export type HomeWidgetItem = typeof homeWidget.$inferSelect;
+export type InsertHomeWidgetItem = z.infer<typeof insertHomeWidgetItemSchema>;
 export type WeightRoomCollection = typeof weightRoomCollections.$inferSelect;
 export type InsertWeightRoomCollection = z.infer<typeof insertWeightRoomCollectionSchema>;
