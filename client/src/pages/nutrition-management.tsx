@@ -67,7 +67,6 @@ export default function NutritionManagement() {
     description: "",
     category: "",
     videoUrl: "",
-    thumbnail: "",
     duration: "",
   });
 
@@ -256,7 +255,6 @@ export default function NutritionManagement() {
         description: video.description || "",
         category: video.category,
         videoUrl: video.videoUrl,
-        thumbnail: video.thumbnail || "",
         duration: video.duration ? String(video.duration) : "",
       });
     } else {
@@ -266,7 +264,6 @@ export default function NutritionManagement() {
         description: "",
         category: "",
         videoUrl: "",
-        thumbnail: "",
         duration: "",
       });
     }
@@ -281,7 +278,6 @@ export default function NutritionManagement() {
       description: "",
       category: "",
       videoUrl: "",
-      thumbnail: "",
       duration: "",
     });
   };
@@ -1035,29 +1031,7 @@ export default function NutritionManagement() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="video-thumbnail">Thumbnail URL</Label>
-              <Input 
-                id="video-thumbnail" 
-                placeholder="https://..." 
-                value={videoFormData.thumbnail}
-                onChange={(e) => setVideoFormData(prev => ({ ...prev, thumbnail: e.target.value }))}
-                data-testid="input-video-thumbnail" 
-              />
-              {videoFormData.thumbnail && (
-                <div className="aspect-video w-full rounded-md overflow-hidden border bg-muted mt-2">
-                  <img 
-                    src={videoFormData.thumbnail} 
-                    alt="Thumbnail preview" 
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </div>
-              )}
             </div>
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseVideoDialog} data-testid="button-cancel-video">
               Cancel
