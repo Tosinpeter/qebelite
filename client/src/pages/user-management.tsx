@@ -158,7 +158,7 @@ export default function UserManagement() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.id}
+                      {user.email || user.id}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
