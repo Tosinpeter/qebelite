@@ -42,9 +42,12 @@ import { Play, Video } from "lucide-react";
 
 export default function NutritionManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("daily");
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
+  const [editingVideo, setEditingVideo] = useState<NutritionVideo | null>(null);
   const [deleteRecipe, setDeleteRecipe] = useState<Recipe | null>(null);
+  const [deleteVideo, setDeleteVideo] = useState<NutritionVideo | null>(null);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
   const [isUploadingImage, setIsUploadingImage] = useState(false);
@@ -57,6 +60,15 @@ export default function NutritionManagement() {
     image: "",
     ingredients: [""],
     instructions: [""],
+  });
+
+  const [videoFormData, setVideoFormData] = useState({
+    title: "",
+    description: "",
+    category: "",
+    videoUrl: "",
+    thumbnail: "",
+    duration: "",
   });
 
   const { toast } = useToast();
@@ -129,6 +141,64 @@ export default function NutritionManagement() {
     },
   });
 
+  const createVideoMutation = useMutation({
+    mutationFn: (data: Partial<NutritionVideo>) => nutritionVideoQueries.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/nutrition-videos'] });
+      toast({
+        title: "Success",
+        description: "Video created successfully",
+      });
+      handleCloseVideoDialog();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create video",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateVideoMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<NutritionVideo> }) =>
+      nutritionVideoQueries.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/nutrition-videos'] });
+      toast({
+        title: "Success",
+        description: "Video updated successfully",
+      });
+      handleCloseVideoDialog();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update video",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteVideoMutation = useMutation({
+    mutationFn: (id: string) => nutritionVideoQueries.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/nutrition-videos'] });
+      toast({
+        title: "Success",
+        description: "Video deleted successfully",
+      });
+      setDeleteVideo(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete video",
+        variant: "destructive",
+      });
+    },
+  });
+
   const dailyRecipes = recipes?.filter(r => r.type === 'daily') || [];
   const weeklyRecipes = recipes?.filter(r => r.type === 'weekly') || [];
 
@@ -175,6 +245,44 @@ export default function NutritionManagement() {
       image: "",
       ingredients: [""],
       instructions: [""],
+    });
+  };
+
+  const handleOpenVideoDialog = (video?: NutritionVideo) => {
+    if (video) {
+      setEditingVideo(video);
+      setVideoFormData({
+        title: video.title,
+        description: video.description || "",
+        category: video.category,
+        videoUrl: video.videoUrl,
+        thumbnail: video.thumbnail || "",
+        duration: video.duration ? String(video.duration) : "",
+      });
+    } else {
+      setEditingVideo(null);
+      setVideoFormData({
+        title: "",
+        description: "",
+        category: "",
+        videoUrl: "",
+        thumbnail: "",
+        duration: "",
+      });
+    }
+    setIsVideoDialogOpen(true);
+  };
+
+  const handleCloseVideoDialog = () => {
+    setIsVideoDialogOpen(false);
+    setEditingVideo(null);
+    setVideoFormData({
+      title: "",
+      description: "",
+      category: "",
+      videoUrl: "",
+      thumbnail: "",
+      duration: "",
     });
   };
 
@@ -329,6 +437,38 @@ export default function NutritionManagement() {
   const handleDelete = () => {
     if (deleteRecipe) {
       deleteMutation.mutate(deleteRecipe.id);
+    }
+  };
+
+  const handleSubmitVideo = () => {
+    if (!videoFormData.title.trim() || !videoFormData.category.trim() || !videoFormData.videoUrl.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const videoData: Partial<NutritionVideo> = {
+      title: videoFormData.title.trim(),
+      description: videoFormData.description.trim() || undefined,
+      category: videoFormData.category.trim(),
+      videoUrl: videoFormData.videoUrl.trim(),
+      thumbnail: videoFormData.thumbnail.trim() || undefined,
+      duration: videoFormData.duration ? parseInt(videoFormData.duration) : undefined,
+    };
+
+    if (editingVideo) {
+      updateVideoMutation.mutate({ id: editingVideo.id, data: videoData });
+    } else {
+      createVideoMutation.mutate(videoData);
+    }
+  };
+
+  const handleDeleteVideo = () => {
+    if (deleteVideo) {
+      deleteVideoMutation.mutate(deleteVideo.id);
     }
   };
 
@@ -510,7 +650,7 @@ export default function NutritionManagement() {
 
         <TabsContent value="videos" className="space-y-4 mt-6">
           <div className="flex justify-end">
-            <Button data-testid="button-create-video">
+            <Button onClick={() => handleOpenVideoDialog()} data-testid="button-create-video">
               <Plus className="h-4 w-4 mr-2" />
               Add Nutrition Video
             </Button>
@@ -566,10 +706,32 @@ export default function NutritionManagement() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4">
-                    <h3 className="font-semibold text-base line-clamp-1 mb-1">{video.title}</h3>
-                    {video.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
-                    )}
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-base line-clamp-1">{video.title}</h3>
+                      {video.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
+                      )}
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="flex-1"
+                        onClick={() => handleOpenVideoDialog(video)}
+                        data-testid={`button-edit-video-${video.id}`}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setDeleteVideo(video)}
+                        data-testid={`button-delete-video-${video.id}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -806,6 +968,111 @@ export default function NutritionManagement() {
         </DialogContent>
       </Dialog>
 
+      <Dialog open={isVideoDialogOpen} onOpenChange={handleCloseVideoDialog}>
+        <DialogContent className="max-w-2xl" data-testid="dialog-video-form">
+          <DialogHeader>
+            <DialogTitle>{editingVideo ? "Edit Video" : "Add Nutrition Video"}</DialogTitle>
+            <DialogDescription>
+              {editingVideo ? "Update the video details" : "Add a new nutrition video"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="video-title">Title *</Label>
+              <Input 
+                id="video-title" 
+                placeholder="Video title" 
+                value={videoFormData.title}
+                onChange={(e) => setVideoFormData(prev => ({ ...prev, title: e.target.value }))}
+                data-testid="input-video-title" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="video-description">Description</Label>
+              <Textarea 
+                id="video-description" 
+                placeholder="Brief description of the video" 
+                value={videoFormData.description}
+                onChange={(e) => setVideoFormData(prev => ({ ...prev, description: e.target.value }))}
+                rows={3}
+                data-testid="input-video-description" 
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="video-category">Category *</Label>
+                <Input 
+                  id="video-category" 
+                  placeholder="e.g., meal prep, recipes, tips" 
+                  value={videoFormData.category}
+                  onChange={(e) => setVideoFormData(prev => ({ ...prev, category: e.target.value }))}
+                  data-testid="input-video-category" 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="video-duration">Duration (seconds)</Label>
+                <Input 
+                  id="video-duration" 
+                  type="number"
+                  placeholder="e.g., 180" 
+                  value={videoFormData.duration}
+                  onChange={(e) => setVideoFormData(prev => ({ ...prev, duration: e.target.value }))}
+                  data-testid="input-video-duration" 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="video-url">Video URL *</Label>
+              <Input 
+                id="video-url" 
+                placeholder="https://youtube.com/watch?v=..." 
+                value={videoFormData.videoUrl}
+                onChange={(e) => setVideoFormData(prev => ({ ...prev, videoUrl: e.target.value }))}
+                data-testid="input-video-url" 
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="video-thumbnail">Thumbnail URL</Label>
+              <Input 
+                id="video-thumbnail" 
+                placeholder="https://..." 
+                value={videoFormData.thumbnail}
+                onChange={(e) => setVideoFormData(prev => ({ ...prev, thumbnail: e.target.value }))}
+                data-testid="input-video-thumbnail" 
+              />
+              {videoFormData.thumbnail && (
+                <div className="aspect-video w-full rounded-md overflow-hidden border bg-muted mt-2">
+                  <img 
+                    src={videoFormData.thumbnail} 
+                    alt="Thumbnail preview" 
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCloseVideoDialog} data-testid="button-cancel-video">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitVideo} 
+              disabled={createVideoMutation.isPending || updateVideoMutation.isPending}
+              data-testid="button-save-video"
+            >
+              {createVideoMutation.isPending || updateVideoMutation.isPending ? "Saving..." : (editingVideo ? "Update" : "Create")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={!!deleteRecipe} onOpenChange={() => setDeleteRecipe(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -822,6 +1089,27 @@ export default function NutritionManagement() {
               data-testid="button-confirm-delete"
             >
               {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!deleteVideo} onOpenChange={() => setDeleteVideo(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Video</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{deleteVideo?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel data-testid="button-cancel-delete-video">Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteVideo}
+              disabled={deleteVideoMutation.isPending}
+              data-testid="button-confirm-delete-video"
+            >
+              {deleteVideoMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
