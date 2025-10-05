@@ -61,7 +61,7 @@ export function AppSidebar() {
     <aside className="h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700">
       <div className="flex flex-col h-full">
         {/* Logo */}
-        <div className="px-3 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 pt-[18px] pb-[18px]">
           <div className="flex items-center gap-2 px-3">
             <svg className="w-8 h-8" viewBox="0 0 33 33" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M25.2 0H7.8C3.49218 0 0 3.49218 0 7.8V25.2C0 29.5078 3.49218 33 7.8 33H25.2C29.5078 33 33 29.5078 33 25.2V7.8C33 3.49218 29.5078 0 25.2 0Z" fill="currentColor" className="text-primary"/>
