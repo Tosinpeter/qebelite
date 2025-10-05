@@ -8,7 +8,8 @@ import type {
   HomeSlide,
   HomeWidgetItem,
   WeightRoomCollection,
-  WeightRoomVideo
+  WeightRoomVideo,
+  Recipe
 } from '@shared/schema';
 
 const mapUserFromDb = (dbUser: any): User => ({
@@ -569,6 +570,98 @@ export const weightRoomVideoQueries = {
   delete: async (id: string) => {
     const { error } = await supabase
       .from('weight_room_videos')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+const mapRecipeFromDb = (dbRecipe: any): Recipe => ({
+  id: dbRecipe.id,
+  createdAt: dbRecipe.created_at,
+  meal: dbRecipe.meal,
+  title: dbRecipe.title,
+  description: dbRecipe.description,
+  ingredients: dbRecipe.ingredients,
+  instructions: dbRecipe.instructions,
+  image: dbRecipe.image,
+});
+
+const mapRecipeToDb = (recipe: Partial<Recipe>): any => {
+  const dbRecipe: any = {};
+  if (recipe.id !== undefined) dbRecipe.id = recipe.id;
+  if (recipe.createdAt !== undefined) dbRecipe.created_at = recipe.createdAt;
+  if (recipe.meal !== undefined) dbRecipe.meal = recipe.meal;
+  if (recipe.title !== undefined) dbRecipe.title = recipe.title;
+  if (recipe.description !== undefined) dbRecipe.description = recipe.description;
+  if (recipe.ingredients !== undefined) dbRecipe.ingredients = recipe.ingredients;
+  if (recipe.instructions !== undefined) dbRecipe.instructions = recipe.instructions;
+  if (recipe.image !== undefined) dbRecipe.image = recipe.image;
+  return dbRecipe;
+};
+
+export const recipeQueries = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data.map(mapRecipeFromDb);
+  },
+
+  getById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return mapRecipeFromDb(data);
+  },
+
+  getByMeal: async (meal: string) => {
+    const { data, error } = await supabase
+      .from('recipes')
+      .select('*')
+      .eq('meal', meal)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data.map(mapRecipeFromDb);
+  },
+
+  create: async (recipe: Partial<Recipe>) => {
+    const dbRecipe = mapRecipeToDb(recipe);
+    const { data, error } = await supabase
+      .from('recipes')
+      .insert(dbRecipe)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapRecipeFromDb(data);
+  },
+
+  update: async (id: string, updates: Partial<Recipe>) => {
+    const dbUpdates = mapRecipeToDb(updates);
+    const { data, error } = await supabase
+      .from('recipes')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapRecipeFromDb(data);
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('recipes')
       .delete()
       .eq('id', id);
     
