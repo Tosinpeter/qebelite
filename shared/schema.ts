@@ -6,6 +6,7 @@ import { z } from "zod";
 export const users = pgTable("user_profiles", {
   id: varchar("id").primaryKey(),
   email: varchar("email", { length: 255 }),
+  role: varchar("role", { length: 20 }),
   age: varchar("age", { length: 10 }),
   height: varchar("height", { length: 20 }),
   weight: varchar("weight", { length: 20 }),

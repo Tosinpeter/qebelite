@@ -15,6 +15,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import type { User } from "@shared/schema";
@@ -24,7 +25,9 @@ export default function UserManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
+    email: "",
     displayName: "",
+    role: "user",
     age: "",
     height: "",
     weight: "",
@@ -36,6 +39,19 @@ export default function UserManagement() {
 
   const { data: users = [], isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"],
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) =>
+      apiRequest("POST", "/api/users", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({ title: "User created successfully" });
+      setIsDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
   });
 
   const updateMutation = useMutation({
@@ -67,10 +83,27 @@ export default function UserManagement() {
     (user.id.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const handleCreate = () => {
+    setEditingUser(null);
+    setFormData({
+      email: "",
+      displayName: "",
+      role: "user",
+      age: "",
+      height: "",
+      weight: "",
+      recipePreference: "",
+      avatarUrl: "",
+    });
+    setIsDialogOpen(true);
+  };
+
   const handleEdit = (user: User) => {
     setEditingUser(user);
     setFormData({
+      email: user.email || "",
       displayName: user.displayName || "",
+      role: user.role || "user",
       age: user.age || "",
       height: user.height || "",
       weight: user.weight || "",
@@ -92,6 +125,12 @@ export default function UserManagement() {
         id: editingUser.id,
         data: formData,
       });
+    } else {
+      const userId = crypto.randomUUID();
+      createMutation.mutate({
+        id: userId,
+        ...formData,
+      });
     }
   };
 
@@ -112,6 +151,10 @@ export default function UserManagement() {
             Manage user profiles and preferences
           </p>
         </div>
+        <Button onClick={handleCreate} data-testid="button-create-user">
+          <Plus className="h-4 w-4 mr-2" />
+          Add User
+        </Button>
       </div>
 
       <Card>
@@ -134,6 +177,7 @@ export default function UserManagement() {
                 <tr>
                   <th className="px-6 py-3">User</th>
                   <th className="px-6 py-3">Email</th>
+                  <th className="px-6 py-3">Role</th>
                   <th className="px-6 py-3">Age</th>
                   <th className="px-6 py-3">Weight</th>
                   <th className="px-6 py-3">Actions</th>
@@ -161,6 +205,11 @@ export default function UserManagement() {
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {user.email || user.id}
+                    </td>
+                    <td className="px-6 py-4">
+                      <Badge variant={user.role === "admin" ? "default" : "secondary"}>
+                        {user.role || "user"}
+                      </Badge>
                     </td>
                     <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                       {user.age || "—"}
@@ -194,7 +243,7 @@ export default function UserManagement() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>
@@ -208,12 +257,25 @@ export default function UserManagement() {
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent data-testid="dialog-user-form">
           <DialogHeader>
-            <DialogTitle>Edit User Profile</DialogTitle>
+            <DialogTitle>{editingUser ? "Edit User Profile" : "Create New User"}</DialogTitle>
             <DialogDescription>
-              Update user profile information
+              {editingUser ? "Update user profile information" : "Add a new user to the system"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {!editingUser && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input 
+                  id="email" 
+                  type="email"
+                  placeholder="user@example.com" 
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  data-testid="input-user-email" 
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
               <Input 
@@ -223,6 +285,18 @@ export default function UserManagement() {
                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
                 data-testid="input-user-displayname" 
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                <SelectTrigger data-testid="select-user-role">
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="user">User</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -283,10 +357,10 @@ export default function UserManagement() {
             </Button>
             <Button 
               onClick={handleSave} 
-              disabled={updateMutation.isPending}
+              disabled={updateMutation.isPending || createMutation.isPending}
               data-testid="button-save-user"
             >
-              {updateMutation.isPending ? "Saving..." : "Save Changes"}
+              {updateMutation.isPending || createMutation.isPending ? "Saving..." : editingUser ? "Save Changes" : "Create User"}
             </Button>
           </DialogFooter>
         </DialogContent>
