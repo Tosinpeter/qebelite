@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Clock } from "lucide-react";
+import { Plus, Edit, Trash2, ChefHat } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,48 +15,21 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-type MealPlan = {
-  id: string;
-  title: string;
-  meals: string[];
-  calories: number;
-};
-
-type Video = {
-  id: string;
-  title: string;
-  category: string;
-  duration: number;
-  thumbnail: string;
-};
+import { useQuery } from "@tanstack/react-query";
+import { recipeQueries } from "@/lib/supabase-queries";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function NutritionManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("daily");
 
-  const dailyPlans: MealPlan[] = [
-    { id: "1", title: "High Protein Plan", meals: ["Greek Yogurt Bowl", "Grilled Chicken Salad", "Salmon & Veggies", "Protein Shake"], calories: 2100 },
-    { id: "2", title: "Balanced Nutrition", meals: ["Oatmeal & Berries", "Turkey Wrap", "Quinoa Bowl", "Mixed Nuts"], calories: 1900 },
-  ];
+  const { data: recipes, isLoading } = useQuery({
+    queryKey: ['/recipes'],
+    queryFn: () => recipeQueries.getAll(),
+  });
 
-  const weeklyPlans: MealPlan[] = [
-    { id: "1", title: "Muscle Building Week", meals: ["7 days of high-protein meals"], calories: 14700 },
-    { id: "2", title: "Weight Loss Week", meals: ["7 days of calorie-deficit meals"], calories: 11900 },
-  ];
-
-  const trainingVideos: Video[] = [
-    { id: "1", title: "Macro Basics for Athletes", category: "Education", duration: 840, thumbnail: "" },
-    { id: "2", title: "Meal Prep Sunday Routine", category: "Practical", duration: 1200, thumbnail: "" },
-    { id: "3", title: "Pre-Workout Nutrition", category: "Performance", duration: 480, thumbnail: "" },
-    { id: "4", title: "Hydration Strategies", category: "Performance", duration: 360, thumbnail: "" },
-  ];
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const dailyRecipes = recipes?.filter(r => r.type === 'daily') || [];
+  const weeklyRecipes = recipes?.filter(r => r.type === 'weekly') || [];
 
   return (
     <div className="space-y-6">
@@ -64,136 +37,177 @@ export default function NutritionManagement() {
         <div>
           <h1 className="text-2xl font-semibold" data-testid="text-page-title">Nutrition Management</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage meal plans and nutrition content
+            Manage recipes and meal plans
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-plan">
+        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-recipe">
           <Plus className="h-4 w-4 mr-2" />
-          Add Content
+          Add Recipe
         </Button>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList data-testid="tabs-nutrition">
-          <TabsTrigger value="daily" data-testid="tab-daily">Daily Plans</TabsTrigger>
-          <TabsTrigger value="weekly" data-testid="tab-weekly">Weekly Plans</TabsTrigger>
-          <TabsTrigger value="videos" data-testid="tab-videos">Training Videos</TabsTrigger>
+          <TabsTrigger value="daily" data-testid="tab-daily">Daily Recipes</TabsTrigger>
+          <TabsTrigger value="weekly" data-testid="tab-weekly">Weekly Meal Prep</TabsTrigger>
         </TabsList>
 
         <TabsContent value="daily" className="space-y-4 mt-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            {dailyPlans.map((plan) => (
-              <Card key={plan.id} className="hover-elevate" data-testid={`plan-item-${plan.id}`}>
-                <CardHeader>
-                  <div className="flex justify-between items-start gap-2">
-                    <CardTitle className="text-lg">{plan.title}</CardTitle>
-                    <Badge>{plan.calories} cal</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {plan.meals.map((meal, i) => (
-                      <div key={i} className="text-sm p-2 bg-muted/50 rounded">
-                        {meal}
+          {isLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i}>
+                  <CardHeader className="p-0">
+                    <Skeleton className="aspect-video w-full rounded-t-md" />
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {dailyRecipes.map((recipe) => (
+                <Card key={recipe.id} className="hover-elevate overflow-hidden" data-testid={`recipe-item-${recipe.id}`}>
+                  <CardHeader className="p-0">
+                    <div className="aspect-video relative overflow-hidden bg-muted">
+                      <img 
+                        src={recipe.image} 
+                        alt={recipe.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1546548970-71785318a17b';
+                        }}
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="secondary" className="bg-black/60 text-white border-0">
+                          {recipe.meal}
+                        </Badge>
                       </div>
-                    ))}
-                  </div>
-                  <div className="mt-4 flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" data-testid={`button-edit-plan-${plan.id}`}>
-                      Edit
-                    </Button>
-                    <Button size="sm" variant="ghost" data-testid={`button-duplicate-plan-${plan.id}`}>
-                      Duplicate
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-base line-clamp-1">{recipe.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{recipe.description}</p>
+                      <div className="flex gap-2 text-xs text-muted-foreground">
+                        <span>{recipe.ingredients.length} ingredients</span>
+                        <span>•</span>
+                        <span>{recipe.instructions.length} steps</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" data-testid={`button-view-recipe-${recipe.id}`}>
+                        <ChefHat className="h-3 w-3 mr-1" />
+                        View Recipe
+                      </Button>
+                      <Button size="sm" variant="ghost" data-testid={`button-edit-recipe-${recipe.id}`}>
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" data-testid={`button-delete-recipe-${recipe.id}`}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="weekly" className="space-y-4 mt-6">
-          <div className="grid gap-4 md:grid-cols-2">
-            {weeklyPlans.map((plan) => (
-              <Card key={plan.id} className="hover-elevate" data-testid={`weekly-plan-${plan.id}`}>
-                <CardHeader>
-                  <div className="flex justify-between items-start gap-2">
-                    <CardTitle className="text-lg">{plan.title}</CardTitle>
-                    <Badge>{plan.calories} cal/week</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-muted-foreground mb-4">{plan.meals[0]}</p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" data-testid={`button-edit-weekly-${plan.id}`}>
-                      Edit
-                    </Button>
-                    <Button size="sm" variant="ghost" data-testid={`button-view-weekly-${plan.id}`}>
-                      View Details
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="videos" className="space-y-4 mt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {trainingVideos.map((video) => (
-              <Card key={video.id} className="hover-elevate" data-testid={`video-item-${video.id}`}>
-                <CardHeader className="p-0">
-                  <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative">
-                    <Play className="h-12 w-12 text-primary" />
-                    <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                      <Clock className="h-3 w-3 inline mr-1" />
-                      {formatDuration(video.duration)}
+          {isLoading ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i}>
+                  <CardHeader className="p-0">
+                    <Skeleton className="aspect-video w-full rounded-t-md" />
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-4 md:grid-cols-2">
+              {weeklyRecipes.map((recipe) => (
+                <Card key={recipe.id} className="hover-elevate overflow-hidden" data-testid={`weekly-recipe-${recipe.id}`}>
+                  <CardHeader className="p-0">
+                    <div className="aspect-video relative overflow-hidden bg-muted">
+                      <img 
+                        src={recipe.image} 
+                        alt={recipe.title}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'https://images.unsplash.com/photo-1546548970-71785318a17b';
+                        }}
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="secondary" className="bg-black/60 text-white border-0">
+                          {recipe.meal}
+                        </Badge>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="font-medium text-sm">{video.title}</div>
-                    <Badge variant="secondary">{video.category}</Badge>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" data-testid={`button-watch-${video.id}`}>
-                      Watch
-                    </Button>
-                    <Button size="sm" variant="ghost" data-testid={`button-edit-video-${video.id}`}>
-                      Edit
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg line-clamp-1">{recipe.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-3">{recipe.description}</p>
+                      <div className="flex gap-2 text-xs text-muted-foreground">
+                        <span>{recipe.ingredients.length} ingredients</span>
+                        <span>•</span>
+                        <span>{recipe.instructions.length} steps</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex gap-2">
+                      <Button size="sm" variant="outline" className="flex-1" data-testid={`button-view-weekly-recipe-${recipe.id}`}>
+                        <ChefHat className="h-3 w-3 mr-1" />
+                        View Recipe
+                      </Button>
+                      <Button size="sm" variant="ghost" data-testid={`button-edit-weekly-recipe-${recipe.id}`}>
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" data-testid={`button-delete-weekly-recipe-${recipe.id}`}>
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
       </Tabs>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent data-testid="dialog-nutrition-form">
+        <DialogContent data-testid="dialog-recipe-form">
           <DialogHeader>
-            <DialogTitle>Add Nutrition Content</DialogTitle>
+            <DialogTitle>Add Recipe</DialogTitle>
             <DialogDescription>
-              Create a new meal plan or upload training video
+              Create a new recipe with ingredients and instructions
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Content title" data-testid="input-nutrition-title" />
+              <Input id="title" placeholder="Recipe title" data-testid="input-recipe-title" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" placeholder="Details about this content" data-testid="input-nutrition-description" />
+              <Textarea id="description" placeholder="Brief description" data-testid="input-recipe-description" />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button onClick={() => setIsDialogOpen(false)} data-testid="button-save-nutrition">
+            <Button onClick={() => setIsDialogOpen(false)} data-testid="button-save-recipe">
               Create
             </Button>
           </DialogFooter>
