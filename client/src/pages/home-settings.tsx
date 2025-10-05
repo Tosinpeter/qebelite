@@ -17,6 +17,8 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { HomeSlide, HomeWidget } from "@shared/schema";
+import { supabase } from "@/lib/supabase";
+import { Upload } from "lucide-react";
 
 export default function HomeSettings() {
   const { toast } = useToast();
@@ -37,6 +39,8 @@ export default function HomeSettings() {
     redirectUrl: "",
     text: "",
   });
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const createSlideMutation = useMutation({
     mutationFn: (data: { position: number; imageUrl: string; redirectUrl: string; text?: string }) =>
@@ -142,6 +146,90 @@ export default function HomeSettings() {
 
   const handleDeleteSlide = (id: string) => {
     deleteSlideMutation.mutate(id);
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        variant: "destructive",
+        title: "Invalid file type",
+        description: "Please upload an image file",
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `slides/${fileName}`;
+
+      const { data, error } = await supabase.storage
+        .from('home-slides')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (error) {
+        if (error.message.includes('Bucket not found')) {
+          const { error: bucketError } = await supabase.storage.createBucket('home-slides', {
+            public: true,
+            fileSizeLimit: 5242880
+          });
+
+          if (bucketError && !bucketError.message.includes('already exists')) {
+            throw bucketError;
+          }
+
+          const { data: retryData, error: retryError } = await supabase.storage
+            .from('home-slides')
+            .upload(filePath, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (retryError) throw retryError;
+
+          const { data: { publicUrl } } = supabase.storage
+            .from('home-slides')
+            .getPublicUrl(retryData.path);
+
+          setSlideForm({ ...slideForm, imageUrl: publicUrl });
+          toast({
+            title: "Upload successful",
+            description: "Image uploaded to storage",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        const { data: { publicUrl } } = supabase.storage
+          .from('home-slides')
+          .getPublicUrl(data.path);
+
+        setSlideForm({ ...slideForm, imageUrl: publicUrl });
+        toast({
+          title: "Upload successful",
+          description: "Image uploaded to storage",
+        });
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({
+        variant: "destructive",
+        title: "Upload failed",
+        description: error.message || "Failed to upload image",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
   };
 
   const handleSaveSlide = () => {
@@ -355,15 +443,39 @@ export default function HomeSettings() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="imageUrl">Image URL</Label>
-              <Input
-                id="imageUrl"
-                type="url"
-                placeholder="https://example.com/slide.jpg"
-                value={slideForm.imageUrl}
-                onChange={(e) => setSlideForm({ ...slideForm, imageUrl: e.target.value })}
-                data-testid="input-slide-image"
-              />
+              <Label htmlFor="imageUrl">Image</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="imageUrl"
+                  type="url"
+                  placeholder="https://example.com/slide.jpg"
+                  value={slideForm.imageUrl}
+                  onChange={(e) => setSlideForm({ ...slideForm, imageUrl: e.target.value })}
+                  data-testid="input-slide-image"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                  disabled={isUploading}
+                  data-testid="button-upload-image"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? "Uploading..." : "Upload"}
+                </Button>
+                <input
+                  id="file-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  data-testid="input-file-upload"
+                />
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Upload an image or paste a URL
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="redirectUrl">Redirect URL</Label>
