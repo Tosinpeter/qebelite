@@ -23,6 +23,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { weightRoomQueries, weightRoomVideoQueries, storageHelpers } from "@/lib/supabase-queries";
@@ -39,6 +48,9 @@ export default function WeightRoom() {
   const [editingVideo, setEditingVideo] = useState<WeightRoomVideo | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [collectionsPage, setCollectionsPage] = useState(1);
+  const [videosPage, setVideosPage] = useState(1);
+  const itemsPerPage = 9;
   const [formData, setFormData] = useState({
     position: 0,
     title: "",
@@ -275,6 +287,29 @@ export default function WeightRoom() {
     ? videos 
     : videos.filter(v => v.collectionId === selectedCollectionId);
 
+  const totalCollectionPages = Math.ceil(collections.length / itemsPerPage);
+  const totalVideoPages = Math.ceil(filteredVideos.length / itemsPerPage);
+
+  const paginatedCollections = collections.slice(
+    (collectionsPage - 1) * itemsPerPage,
+    collectionsPage * itemsPerPage
+  );
+
+  const paginatedVideos = filteredVideos.slice(
+    (videosPage - 1) * itemsPerPage,
+    videosPage * itemsPerPage
+  );
+
+  const handleCollectionsPageChange = (page: number) => {
+    setCollectionsPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleVideosPageChange = (page: number) => {
+    setVideosPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -307,9 +342,10 @@ export default function WeightRoom() {
               <p className="text-muted-foreground">No collections found. Click "Add Content" to create one.</p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {collections.map((collection) => (
-                <Card key={collection.id} className="hover-elevate" data-testid={`collection-item-${collection.id}`}>
+            <>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {paginatedCollections.map((collection) => (
+                  <Card key={collection.id} className="hover-elevate" data-testid={`collection-item-${collection.id}`}>
                   <CardHeader className="p-0">
                     <div className="aspect-video bg-muted rounded-t-md overflow-hidden">
                       <img 
@@ -353,7 +389,38 @@ export default function WeightRoom() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+              
+              {totalCollectionPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handleCollectionsPageChange(Math.max(1, collectionsPage - 1))}
+                        className={collectionsPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalCollectionPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handleCollectionsPageChange(page)}
+                          isActive={collectionsPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handleCollectionsPageChange(Math.min(totalCollectionPages, collectionsPage + 1))}
+                        className={collectionsPage === totalCollectionPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </TabsContent>
 
@@ -361,7 +428,10 @@ export default function WeightRoom() {
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Label htmlFor="collection-filter" className="text-sm font-medium">Filter by Collection:</Label>
-              <Select value={selectedCollectionId} onValueChange={setSelectedCollectionId}>
+              <Select value={selectedCollectionId} onValueChange={(value) => {
+                setSelectedCollectionId(value);
+                setVideosPage(1);
+              }}>
                 <SelectTrigger className="w-64" data-testid="select-collection-filter">
                   <SelectValue placeholder="Select a collection" />
                 </SelectTrigger>
@@ -390,9 +460,10 @@ export default function WeightRoom() {
               <p className="text-muted-foreground">No videos found.</p>
             </div>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredVideos.map((video) => (
-                <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
+            <>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {paginatedVideos.map((video) => (
+                  <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
                   <CardHeader className="p-0">
                     <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative">
                       <Play className="h-12 w-12 text-primary" />
@@ -441,7 +512,38 @@ export default function WeightRoom() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
+              </div>
+
+              {totalVideoPages > 1 && (
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => handleVideosPageChange(Math.max(1, videosPage - 1))}
+                        className={videosPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                    {Array.from({ length: totalVideoPages }, (_, i) => i + 1).map((page) => (
+                      <PaginationItem key={page}>
+                        <PaginationLink
+                          onClick={() => handleVideosPageChange(page)}
+                          isActive={videosPage === page}
+                          className="cursor-pointer"
+                        >
+                          {page}
+                        </PaginationLink>
+                      </PaginationItem>
+                    ))}
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => handleVideosPageChange(Math.min(totalVideoPages, videosPage + 1))}
+                        className={videosPage === totalVideoPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              )}
+            </>
           )}
         </TabsContent>
       </Tabs>
