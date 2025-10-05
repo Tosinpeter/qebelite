@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, ChefHat, X } from "lucide-react";
+import { Plus, Edit, Trash2, ChefHat, X, Upload, Image as ImageIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,7 +33,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { recipeQueries } from "@/lib/supabase-queries";
+import { recipeQueries, storageHelpers } from "@/lib/supabase-queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
@@ -44,6 +44,9 @@ export default function NutritionManagement() {
   const [activeTab, setActiveTab] = useState("daily");
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [deleteRecipe, setDeleteRecipe] = useState<Recipe | null>(null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
   
   const [formData, setFormData] = useState({
     type: "daily",
@@ -135,6 +138,7 @@ export default function NutritionManagement() {
         ingredients: recipe.ingredients,
         instructions: recipe.instructions,
       });
+      setImagePreview(recipe.image);
     } else {
       setEditingRecipe(null);
       setFormData({
@@ -146,13 +150,17 @@ export default function NutritionManagement() {
         ingredients: [""],
         instructions: [""],
       });
+      setImagePreview("");
     }
+    setImageFile(null);
     setIsDialogOpen(true);
   };
 
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingRecipe(null);
+    setImageFile(null);
+    setImagePreview("");
     setFormData({
       type: "daily",
       meal: "",
@@ -206,7 +214,43 @@ export default function NutritionManagement() {
     }));
   };
 
-  const handleSubmit = () => {
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Error",
+          description: "Image must be less than 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Error",
+          description: "Please select an image file",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview("");
+    setFormData(prev => ({ ...prev, image: "" }));
+  };
+
+  const handleSubmit = async () => {
     const ingredients = formData.ingredients.filter(i => i.trim() !== "");
     const instructions = formData.instructions.filter(i => i.trim() !== "");
 
@@ -219,12 +263,36 @@ export default function NutritionManagement() {
       return;
     }
 
+    let imageUrl = formData.image || "https://images.unsplash.com/photo-1546548970-71785318a17b";
+
+    if (imageFile) {
+      try {
+        setIsUploadingImage(true);
+        const timestamp = Date.now();
+        const fileName = `recipe-${timestamp}-${imageFile.name}`;
+        const filePath = `recipes/${fileName}`;
+
+        await storageHelpers.uploadFile('recipe-images', filePath, imageFile);
+        imageUrl = storageHelpers.getPublicUrl('recipe-images', filePath);
+      } catch (error: any) {
+        toast({
+          title: "Upload Error",
+          description: error.message || "Failed to upload image",
+          variant: "destructive",
+        });
+        setIsUploadingImage(false);
+        return;
+      } finally {
+        setIsUploadingImage(false);
+      }
+    }
+
     const recipeData = {
       type: formData.type,
       meal: formData.meal,
       title: formData.title,
       description: formData.description,
-      image: formData.image || "https://images.unsplash.com/photo-1546548970-71785318a17b",
+      image: imageUrl,
       ingredients,
       instructions,
     };
@@ -469,14 +537,75 @@ export default function NutritionManagement() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="image">Image URL</Label>
-              <Input 
-                id="image" 
-                placeholder="https://..." 
-                value={formData.image}
-                onChange={(e) => setFormData(prev => ({ ...prev, image: e.target.value }))}
-                data-testid="input-recipe-image" 
-              />
+              <Label>Recipe Image</Label>
+              
+              {imagePreview ? (
+                <div className="relative">
+                  <div className="aspect-video w-full rounded-md overflow-hidden border bg-muted">
+                    <img 
+                      src={imagePreview} 
+                      alt="Preview" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.src = 'https://images.unsplash.com/photo-1546548970-71785318a17b';
+                      }}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    className="absolute top-2 right-2"
+                    onClick={handleRemoveImage}
+                    data-testid="button-remove-image"
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Remove
+                  </Button>
+                </div>
+              ) : (
+                <div className="border-2 border-dashed rounded-md p-6 text-center">
+                  <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground mb-3">Upload an image or paste a URL</p>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => document.getElementById('image-file-input')?.click()}
+                      data-testid="button-upload-image"
+                    >
+                      <Upload className="h-3 w-3 mr-1" />
+                      Upload
+                    </Button>
+                  </div>
+                  <input
+                    id="image-file-input"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageFileChange}
+                    className="hidden"
+                    data-testid="input-image-file"
+                  />
+                </div>
+              )}
+              
+              <div className="space-y-2">
+                <Label htmlFor="image" className="text-xs text-muted-foreground">Or paste image URL</Label>
+                <Input 
+                  id="image" 
+                  placeholder="https://..." 
+                  value={formData.image}
+                  onChange={(e) => {
+                    setFormData(prev => ({ ...prev, image: e.target.value }));
+                    if (e.target.value) {
+                      setImagePreview(e.target.value);
+                    }
+                  }}
+                  data-testid="input-recipe-image" 
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -564,10 +693,10 @@ export default function NutritionManagement() {
             </Button>
             <Button 
               onClick={handleSubmit} 
-              disabled={createMutation.isPending || updateMutation.isPending}
+              disabled={createMutation.isPending || updateMutation.isPending || isUploadingImage}
               data-testid="button-save-recipe"
             >
-              {createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingRecipe ? "Update" : "Create")}
+              {isUploadingImage ? "Uploading..." : (createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingRecipe ? "Update" : "Create"))}
             </Button>
           </DialogFooter>
         </DialogContent>
