@@ -311,23 +311,21 @@ export default function HomeSettings() {
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => handleEditSlide(slide)}
                             data-testid={`button-edit-slide-${slide.id}`}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
                             onClick={() => handleDeleteSlide(slide.id)}
                             data-testid={`button-delete-slide-${slide.id}`}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
