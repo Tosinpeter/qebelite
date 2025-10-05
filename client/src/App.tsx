@@ -29,6 +29,7 @@ import SignUp from "@/pages/sign-up";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 function Router() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [location, setLocation] = useLocation();
+  const { toast } = useToast();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -139,8 +141,24 @@ export default function App() {
                     <DropdownMenuSeparator />
                     <DropdownMenuItem 
                       onClick={async () => {
-                        await supabase.auth.signOut();
-                        setIsAuthenticated(false);
+                        try {
+                          const { error } = await supabase.auth.signOut();
+                          if (error) throw error;
+                          
+                          setIsAuthenticated(false);
+                          setLocation("/sign-in");
+                          
+                          toast({
+                            title: "Logged out successfully",
+                            description: "You have been signed out of your account.",
+                          });
+                        } catch (error: any) {
+                          toast({
+                            title: "Logout failed",
+                            description: error.message || "An error occurred while logging out",
+                            variant: "destructive",
+                          });
+                        }
                       }}
                       data-testid="menu-item-logout"
                     >
