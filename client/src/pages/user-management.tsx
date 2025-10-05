@@ -30,10 +30,7 @@ export default function UserManagement() {
     email: "",
     displayName: "",
     role: "user",
-    age: "",
-    height: "",
-    weight: "",
-    recipePreference: "",
+    password: "",
     avatarUrl: "",
   });
 
@@ -91,10 +88,7 @@ export default function UserManagement() {
       email: "",
       displayName: "",
       role: "user",
-      age: "",
-      height: "",
-      weight: "",
-      recipePreference: "",
+      password: "",
       avatarUrl: "",
     });
     setIsDialogOpen(true);
@@ -106,10 +100,7 @@ export default function UserManagement() {
       email: user.email || "",
       displayName: user.displayName || "",
       role: user.role || "user",
-      age: user.age || "",
-      height: user.height || "",
-      weight: user.weight || "",
-      recipePreference: user.recipePreference || "",
+      password: "",
       avatarUrl: user.avatarUrl || "",
     });
     setIsDialogOpen(true);
@@ -262,8 +253,6 @@ export default function UserManagement() {
                   <th className="px-6 py-3">User</th>
                   <th className="px-6 py-3">Email</th>
                   <th className="px-6 py-3">Role</th>
-                  <th className="px-6 py-3">Age</th>
-                  <th className="px-6 py-3">Weight</th>
                   <th className="px-6 py-3">Actions</th>
                 </tr>
               </thead>
@@ -295,12 +284,6 @@ export default function UserManagement() {
                         {user.role || "user"}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.age || "—"}
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
-                      {user.weight || "—"}
-                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Button
@@ -327,7 +310,7 @@ export default function UserManagement() {
                 ))}
                 {filteredUsers.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
                       No users found
                     </td>
                   </tr>
@@ -434,51 +417,18 @@ export default function UserManagement() {
                 </div>
               </div>
             </div>
-            {formData.role !== "admin" && (
-              <>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="age">Age</Label>
-                    <Input 
-                      id="age" 
-                      placeholder="25" 
-                      value={formData.age}
-                      onChange={(e) => setFormData({ ...formData, age: e.target.value })}
-                      data-testid="input-user-age" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="height">Height</Label>
-                    <Input 
-                      id="height" 
-                      placeholder="5'10&quot;" 
-                      value={formData.height}
-                      onChange={(e) => setFormData({ ...formData, height: e.target.value })}
-                      data-testid="input-user-height" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="weight">Weight</Label>
-                    <Input 
-                      id="weight" 
-                      placeholder="170 lbs" 
-                      value={formData.weight}
-                      onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                      data-testid="input-user-weight" 
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="recipePreference">Recipe Preference</Label>
-                  <Input 
-                    id="recipePreference" 
-                    placeholder="Vegan, Low Carb, etc." 
-                    value={formData.recipePreference}
-                    onChange={(e) => setFormData({ ...formData, recipePreference: e.target.value })}
-                    data-testid="input-user-recipe" 
-                  />
-                </div>
-              </>
+            {!editingUser && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input 
+                  id="password" 
+                  type="password"
+                  placeholder="Enter password" 
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  data-testid="input-user-password" 
+                />
+              </div>
             )}
           </div>
           <DialogFooter>
