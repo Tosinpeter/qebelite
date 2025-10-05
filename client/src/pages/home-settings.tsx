@@ -293,7 +293,7 @@ export default function HomeSettings() {
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                         {slide.position}
                       </td>
-                      <td className="px-6 py-4 text-gray-900 dark:text-white max-w-xs truncate">
+                      <td className="px-6 py-4 text-gray-900 dark:text-white max-w-[200px]">
                         {slide.text || "-"}
                       </td>
                       <td className="px-6 py-4">
@@ -304,7 +304,7 @@ export default function HomeSettings() {
                           data-testid={`img-slide-${slide.id}`}
                         />
                       </td>
-                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400 max-w-xs truncate">
+                      <td className="px-6 py-4 text-gray-500 dark:text-gray-400 max-w-[250px]">
                         {slide.redirectUrl}
                       </td>
                       <td className="px-6 py-4">
