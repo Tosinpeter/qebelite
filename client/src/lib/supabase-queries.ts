@@ -420,10 +420,6 @@ const mapWeightRoomCollectionFromDb = (dbCollection: any): WeightRoomCollection 
   title: dbCollection.title,
   subtitle: dbCollection.subtitle,
   image: dbCollection.image,
-  name: dbCollection.name,
-  description: dbCollection.description,
-  exercises: dbCollection.exercises,
-  videoIds: dbCollection.video_ids,
 });
 
 const mapWeightRoomCollectionToDb = (collection: Partial<WeightRoomCollection>): any => {
@@ -433,10 +429,6 @@ const mapWeightRoomCollectionToDb = (collection: Partial<WeightRoomCollection>):
   if (collection.title !== undefined) dbCollection.title = collection.title;
   if (collection.subtitle !== undefined) dbCollection.subtitle = collection.subtitle;
   if (collection.image !== undefined) dbCollection.image = collection.image;
-  if (collection.name !== undefined) dbCollection.name = collection.name;
-  if (collection.description !== undefined) dbCollection.description = collection.description;
-  if (collection.exercises !== undefined) dbCollection.exercises = collection.exercises;
-  if (collection.videoIds !== undefined) dbCollection.video_ids = collection.videoIds;
   return dbCollection;
 };
 

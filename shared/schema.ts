@@ -77,10 +77,6 @@ export const weightRoomCollections = pgTable("weight_room_collections", {
   title: text("title").notNull(),
   subtitle: text("subtitle"),
   image: text("image").notNull(),
-  name: text("name").notNull(),
-  description: text("description"),
-  exercises: text("exercises").array(),
-  videoIds: text("video_ids").array(),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
