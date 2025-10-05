@@ -277,17 +277,11 @@ export default function WeightRoom() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">Weight Room</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage exercise collections and training videos
-          </p>
-        </div>
-        <Button onClick={handleCreate} data-testid="button-create-content">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Collection
-        </Button>
+      <div>
+        <h1 className="text-2xl font-semibold" data-testid="text-page-title">Weight Room</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage exercise collections and training videos
+        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -297,6 +291,13 @@ export default function WeightRoom() {
         </TabsList>
 
         <TabsContent value="collections" className="space-y-4 mt-6">
+          <div className="flex justify-end">
+            <Button onClick={handleCreate} data-testid="button-create-content">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Collection
+            </Button>
+          </div>
+          
           {isLoading ? (
             <div className="flex items-center justify-center py-12">
               <p className="text-muted-foreground">Loading collections...</p>
