@@ -43,7 +43,6 @@ export default function AthleteResources() {
     description: "",
     image: "",
     externalUrl: "",
-    position: 0,
   });
 
   const { toast } = useToast();
@@ -119,20 +118,17 @@ export default function AthleteResources() {
         description: resource.description,
         image: resource.image,
         externalUrl: resource.externalUrl,
-        position: resource.position,
       });
       if (resource.image) {
         setImagePreview(resource.image);
       }
     } else {
       setEditingResource(null);
-      const nextPosition = resources ? resources.length : 0;
       setFormData({
         title: "",
         description: "",
         image: "",
         externalUrl: "",
-        position: nextPosition,
       });
     }
     setImageFile(null);
@@ -149,7 +145,6 @@ export default function AthleteResources() {
       description: "",
       image: "",
       externalUrl: "",
-      position: 0,
     });
   };
 
@@ -239,7 +234,6 @@ export default function AthleteResources() {
       description: formData.description.trim(),
       image: imageUrl,
       externalUrl: formData.externalUrl.trim(),
-      position: formData.position,
     };
 
     if (editingResource) {
@@ -448,17 +442,6 @@ export default function AthleteResources() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="position">Display Order</Label>
-              <Input 
-                id="position" 
-                type="number"
-                placeholder="0" 
-                value={formData.position}
-                onChange={(e) => setFormData(prev => ({ ...prev, position: parseInt(e.target.value) || 0 }))}
-                data-testid="input-resource-position" 
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog} data-testid="button-cancel">

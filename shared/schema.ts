@@ -117,7 +117,6 @@ export const athleteResources = pgTable("athlete_resources", {
   description: text("description").notNull(),
   image: text("image").notNull(),
   externalUrl: text("external_url").notNull(),
-  position: integer("position").notNull().default(0),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
