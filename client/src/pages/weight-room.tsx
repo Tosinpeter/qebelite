@@ -18,16 +18,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
-import { weightRoomQueries, storageHelpers } from "@/lib/supabase-queries";
+import { weightRoomQueries, weightRoomVideoQueries, storageHelpers } from "@/lib/supabase-queries";
 import { useToast } from "@/hooks/use-toast";
-import type { WeightRoomCollection } from "@shared/schema";
-
-type Video = {
-  id: string;
-  title: string;
-  category: string;
-  duration: number;
-};
+import type { WeightRoomCollection, WeightRoomVideo } from "@shared/schema";
 
 export default function WeightRoom() {
   const { toast } = useToast();
@@ -46,6 +39,11 @@ export default function WeightRoom() {
   const { data: collections = [], isLoading } = useQuery<WeightRoomCollection[]>({
     queryKey: ['weight-room-collections'],
     queryFn: weightRoomQueries.getAll,
+  });
+
+  const { data: videos = [], isLoading: videosLoading } = useQuery<WeightRoomVideo[]>({
+    queryKey: ['weight-room-videos'],
+    queryFn: weightRoomVideoQueries.getAll,
   });
 
   const createMutation = useMutation({
@@ -176,20 +174,13 @@ export default function WeightRoom() {
     }
   };
 
-  const trainingVideos: Video[] = [
-    { id: "1", title: "Proper Squat Form", category: "Technique", duration: 420 },
-    { id: "2", title: "Bench Press Mistakes", category: "Common Errors", duration: 360 },
-    { id: "3", title: "Deadlift Progression", category: "Progressive Overload", duration: 540 },
-    { id: "4", title: "Pull-up Variations", category: "Technique", duration: 480 },
-    { id: "5", title: "Core Routine", category: "Workout", duration: 900 },
-    { id: "6", title: "Mobility Warmup", category: "Preparation", duration: 600 },
-  ];
-
-  const formatDuration = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  const videosByCollection = videos.reduce((acc, video) => {
+    if (!acc[video.collectionId]) {
+      acc[video.collectionId] = [];
+    }
+    acc[video.collectionId].push(video);
+    return acc;
+  }, {} as Record<string, WeightRoomVideo[]>);
 
   return (
     <div className="space-y-6">
@@ -272,36 +263,80 @@ export default function WeightRoom() {
           )}
         </TabsContent>
 
-        <TabsContent value="videos" className="space-y-4 mt-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {trainingVideos.map((video) => (
-              <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
-                <CardHeader className="p-0">
-                  <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative">
-                    <Play className="h-12 w-12 text-primary" />
-                    <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
-                      <Clock className="h-3 w-3 inline mr-1" />
-                      {formatDuration(video.duration)}
+        <TabsContent value="videos" className="space-y-6 mt-6">
+          {videosLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">Loading videos...</p>
+            </div>
+          ) : collections.length === 0 ? (
+            <div className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">No collections found. Create a collection first.</p>
+            </div>
+          ) : (
+            collections.map((collection) => {
+              const collectionVideos = videosByCollection[collection.id] || [];
+              
+              return (
+                <div key={collection.id} className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-semibold">{collection.title}</h3>
+                    <Badge variant="secondary">{collectionVideos.length} videos</Badge>
+                  </div>
+                  
+                  {collectionVideos.length === 0 ? (
+                    <Card className="p-6">
+                      <p className="text-sm text-muted-foreground text-center">
+                        No videos in this collection yet
+                      </p>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {collectionVideos.map((video) => (
+                        <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
+                          <CardHeader className="p-0">
+                            <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative">
+                              <Play className="h-12 w-12 text-primary" />
+                            </div>
+                          </CardHeader>
+                          <CardContent className="p-4">
+                            <div className="space-y-2">
+                              <div className="font-medium text-sm" data-testid={`text-video-title-${video.id}`}>
+                                {video.title}
+                              </div>
+                              {video.description && (
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {video.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="mt-3 flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                className="flex-1"
+                                onClick={() => window.open(video.videoUrl, '_blank')}
+                                data-testid={`button-watch-${video.id}`}
+                              >
+                                <Play className="h-3 w-3 mr-1" />
+                                Watch
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                data-testid={`button-edit-video-${video.id}`}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <div className="font-medium text-sm">{video.title}</div>
-                    <Badge variant="secondary">{video.category}</Badge>
-                  </div>
-                  <div className="mt-3 flex gap-2">
-                    <Button size="sm" variant="outline" className="flex-1" data-testid={`button-watch-${video.id}`}>
-                      Watch
-                    </Button>
-                    <Button size="sm" variant="ghost" data-testid={`button-edit-video-${video.id}`}>
-                      Edit
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  )}
+                </div>
+              );
+            })
+          )}
         </TabsContent>
       </Tabs>
 
