@@ -18,7 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
+import { userQueries } from "@/lib/supabase-queries";
 import type { User } from "@shared/schema";
 import { supabase } from "@/lib/supabase";
 
@@ -41,14 +42,14 @@ export default function UserManagement() {
   const { toast } = useToast();
 
   const { data: users = [], isLoading } = useQuery<User[]>({
-    queryKey: ["/api/users"],
+    queryKey: ['users'],
+    queryFn: userQueries.getAll,
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiRequest("POST", "/api/users", data),
+    mutationFn: (data: Partial<User>) => userQueries.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({ title: "User created successfully" });
       setIsDialogOpen(false);
     },
@@ -58,10 +59,10 @@ export default function UserManagement() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) =>
-      apiRequest("PATCH", `/api/users/${id}`, data),
+    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) => 
+      userQueries.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({ title: "User updated successfully" });
       setIsDialogOpen(false);
     },
@@ -71,9 +72,9 @@ export default function UserManagement() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/users/${id}`),
+    mutationFn: (id: string) => userQueries.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      queryClient.invalidateQueries({ queryKey: ['users'] });
       toast({ title: "User deleted successfully" });
     },
     onError: (error: any) => {
@@ -258,17 +259,19 @@ export default function UserManagement() {
           throw new Error(errorMessage);
         }
         
-        if (authData.user) {
-          createMutation.mutate({
-            id: authData.user.id,
-            email: formData.email,
-            displayName: formData.displayName,
-            role: formData.role,
-            avatarUrl: formData.avatarUrl,
-            age: formData.age,
-            weight: formData.weight,
-          });
+        if (!authData.user) {
+          throw new Error('User creation failed - no user returned from authentication');
         }
+
+        await createMutation.mutateAsync({
+          id: authData.user.id,
+          email: formData.email,
+          displayName: formData.displayName,
+          role: formData.role,
+          avatarUrl: formData.avatarUrl,
+          age: formData.age,
+          weight: formData.weight,
+        });
       } catch (error: any) {
         toast({
           variant: "destructive",

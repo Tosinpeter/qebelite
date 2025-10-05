@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { GripVertical, Eye, EyeOff, Plus, Edit, Trash2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { HomeSlide, HomeWidget, HomeWidgetItem } from "@shared/schema";
 import { supabase } from "@/lib/supabase";

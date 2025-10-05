@@ -2,7 +2,7 @@
 
 ## Overview
 
-QEB Elite is a comprehensive fitness application admin dashboard built with React and Express. The platform enables administrators to manage users, organize group fitness sessions (huddles), curate nutrition content, and maintain a library of training videos. The application features a modern, dark-mode-first interface designed for efficiency and data density, allowing administrators to quickly access and manipulate fitness-related content across multiple categories.
+QEB Elite is a comprehensive fitness application admin dashboard built with React and Supabase. The platform enables administrators to manage users, organize group fitness sessions (huddles), curate nutrition content, and maintain a library of training videos. The application features a modern, dark-mode-first interface designed for efficiency and data density, allowing administrators to quickly access and manipulate fitness-related content across multiple categories.
 
 ## User Preferences
 
@@ -39,30 +39,32 @@ The architecture separates concerns cleanly between data fetching (React Query),
 ### Backend Architecture
 
 **Technology Stack:**
-- Express.js for RESTful API server
-- TypeScript for type safety across backend code
-- Drizzle ORM for database interactions with PostgreSQL
-- Neon serverless PostgreSQL for cloud-native database hosting
+- Supabase as the complete backend solution (database, authentication, storage)
+- Direct client-to-Supabase communication (no Express middleware)
+- PostgreSQL database with Row Level Security (RLS) policies
+- Supabase Storage for file uploads (avatars, images)
+- Supabase Auth for user authentication
 
-**API Structure:**
-- RESTful endpoints following resource-based patterns (`/api/home-banners`, `/api/home-widgets`, etc.)
-- Centralized route registration in `/server/routes.ts`
-- Zod schemas for runtime request validation
-- Middleware for logging, error handling, and request parsing
+**Data Access Layer:**
+- Query helpers in `/client/src/lib/supabase-queries.ts` encapsulate all database operations
+- Type-safe operations using Supabase client with TypeScript types from shared schema
+- Organized by entity (users, huddles, nutrition, videos, home content, weight room)
+- Each helper provides CRUD operations (getAll, getById, create, update, delete)
 
-**Database Layer:**
-- Drizzle ORM provides type-safe database queries
-- Schema definitions in `/shared/schema.ts` shared between client and server
-- Automatic type generation from database schema using `drizzle-zod`
-- Connection pooling via `@neondatabase/serverless`
+**Database Security:**
+- Row Level Security (RLS) policies control data access
+- Frontend uses Supabase anon key for all operations
+- RLS policies must be configured in Supabase console or via migrations
+- Storage buckets have public access policies for uploads/reads
 
-**Storage Abstraction:**
-- `IStorage` interface in `/server/storage.ts` defines data access contract
-- `DatabaseStorage` implementation provides PostgreSQL-backed persistence
-- Enables future storage backend changes without modifying route handlers
+**Authentication:**
+- Supabase Auth for user signup/login
+- User profiles stored in `user_profiles` table
+- Profile creation triggered automatically after Supabase Auth signup
+- Role-based access control (admin, coach, user) stored in profiles
 
 **Design Rationale:**
-The backend uses a clean layered architecture: routes handle HTTP concerns, storage handles data access, and the database layer handles persistence. This separation enables testing, maintainability, and potential migration to different data stores. Shared schema definitions between frontend and backend eliminate type mismatches.
+The Supabase-only architecture eliminates the need for a custom backend server, simplifying deployment and reducing maintenance overhead. All business logic runs on the client, with Supabase handling authentication, authorization (via RLS), and data persistence. This serverless approach scales automatically and provides real-time capabilities out of the box.
 
 ### Data Schema
 
@@ -84,25 +86,32 @@ The backend uses a clean layered architecture: routes handle HTTP concerns, stor
 ### Development Environment
 
 **Build Process:**
-- Vite handles frontend bundling with hot module replacement
-- esbuild bundles backend code for production deployment
-- TypeScript compilation checked separately via `tsc --noEmit`
-- Development server proxies API requests to Express backend
+- Vite handles all bundling with hot module replacement
+- Pure frontend application - no backend build required
+- TypeScript compilation checked via `tsc --noEmit`
+- Development server: `npm run dev` runs `vite` directly
 
 **Development Tools:**
 - Replit-specific plugins for in-browser development
 - Runtime error overlay for debugging
-- Automatic type checking across monorepo structure
+- Automatic type checking for frontend code
+
+**Deployment:**
+- Static site deployment (Vite build output)
+- No server-side code to deploy
+- Environment variables: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`
+- Supabase handles all backend infrastructure
 
 **Design Rationale:**
-The monorepo structure keeps frontend and backend code together while maintaining clear boundaries. Shared code in `/shared` enables type reuse. Vite's speed improves developer experience, while esbuild produces efficient production bundles.
+The simplified architecture eliminates build complexity and deployment overhead. Vite produces an optimized static bundle that can be deployed anywhere. Supabase provides all backend services, removing the need for server maintenance.
 
 ## External Dependencies
 
-### Database
-- **Neon Serverless PostgreSQL** - Cloud-hosted PostgreSQL database with WebSocket connections for serverless environments
-- Connection managed via `@neondatabase/serverless` package with connection pooling
-- **Development SSL Configuration**: TLS certificate validation disabled in development mode (`NODE_TLS_REJECT_UNAUTHORIZED=0`) to bypass self-signed certificate issues. This is safe for development but should not be used in production.
+### Database and Backend
+- **Supabase** - Complete backend-as-a-service platform providing PostgreSQL database, authentication, storage, and real-time subscriptions
+- **Supabase Client** (`@supabase/supabase-js`) - Official JavaScript client for interacting with Supabase services
+- Direct database access from frontend using Supabase client with automatic connection pooling
+- Row Level Security (RLS) policies enforce data access rules at the database level
 
 ### UI Component Libraries
 - **Radix UI** - Headless, accessible component primitives for dialogs, dropdowns, tooltips, and form controls
@@ -122,7 +131,47 @@ The monorepo structure keeps frontend and backend code together while maintainin
 ### Development Dependencies
 - **TypeScript** - Type safety across entire codebase
 - **Vite** - Development server and build tool
-- **Drizzle Kit** - Database migration tools and schema management
+- **Drizzle ORM/Zod** - Schema definitions and validation (shared between Supabase and frontend)
 
 ### Design Rationale
-External dependencies were chosen to maximize developer productivity while maintaining type safety. Radix UI provides accessible primitives without imposing design opinions. TanStack Query eliminates manual cache management. Drizzle ORM keeps database queries type-safe and composable. All dependencies work together to support the TypeScript-first architecture.
+External dependencies were chosen to maximize developer productivity while maintaining type safety. Radix UI provides accessible primitives without imposing design opinions. TanStack Query eliminates manual cache management. Supabase provides a complete backend solution eliminating the need for custom server code. All dependencies work together to support the TypeScript-first architecture.
+
+## Row Level Security (RLS) Configuration
+
+Since the application uses Supabase's anon key from the frontend, Row Level Security policies must be configured for secure data access.
+
+**Required RLS Policies:**
+
+1. **Storage Policies (user-avatars bucket)**:
+   - Allow public uploads: `CREATE POLICY "Allow public uploads" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'user-avatars');`
+   - Allow public reads: `CREATE POLICY "Allow public reads" ON storage.objects FOR SELECT USING (bucket_id = 'user-avatars');`
+   - Allow public updates: `CREATE POLICY "Allow public updates" ON storage.objects FOR UPDATE USING (bucket_id = 'user-avatars');`
+   - Allow public deletes: `CREATE POLICY "Allow public deletes" ON storage.objects FOR DELETE USING (bucket_id = 'user-avatars');`
+
+2. **Database Table Policies**:
+   For admin dashboard functionality, tables need permissive RLS policies or RLS disabled. Options:
+   
+   **Option A - Disable RLS** (simplest for admin tools):
+   ```sql
+   ALTER TABLE user_profiles DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE huddles DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE nutrition_plans DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE training_videos DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE home_slider DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE home_widget DISABLE ROW LEVEL SECURITY;
+   ALTER TABLE weight_room_collections DISABLE ROW LEVEL SECURITY;
+   ```
+   
+   **Option B - Role-based RLS** (more secure):
+   ```sql
+   -- Example for user_profiles table
+   CREATE POLICY "Admin full access" ON user_profiles 
+     FOR ALL 
+     USING (auth.jwt() ->> 'role' = 'admin');
+   ```
+
+**Important Notes:**
+- Storage policies are currently configured for public access
+- Database RLS policies should be configured based on security requirements
+- For admin-only dashboards, consider disabling RLS or using role-based policies
+- Use Supabase SQL Editor or migrations to apply these policies

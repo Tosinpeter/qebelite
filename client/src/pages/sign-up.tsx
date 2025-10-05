@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { userQueries } from "@/lib/supabase-queries";
 import logoPath from "@assets/logo_1759609546853.png";
 import { Link } from "wouter";
 
@@ -46,9 +46,11 @@ export default function SignUp({ onSignUp }: SignUpProps) {
 
       if (data.user) {
         try {
-          await apiRequest("POST", "/api/users", {
+          await userQueries.create({
             id: data.user.id,
+            email: email,
             displayName: fullname,
+            role: 'user',
             age,
             height,
             weight,
