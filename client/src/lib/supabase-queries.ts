@@ -416,6 +416,7 @@ export const homeWidgetItemQueries = {
 
 const mapWeightRoomCollectionFromDb = (dbCollection: any): WeightRoomCollection => ({
   id: dbCollection.id,
+  position: dbCollection.position,
   title: dbCollection.title,
   subtitle: dbCollection.subtitle,
   image: dbCollection.image,
@@ -428,6 +429,7 @@ const mapWeightRoomCollectionFromDb = (dbCollection: any): WeightRoomCollection 
 const mapWeightRoomCollectionToDb = (collection: Partial<WeightRoomCollection>): any => {
   const dbCollection: any = {};
   if (collection.id !== undefined) dbCollection.id = collection.id;
+  if (collection.position !== undefined) dbCollection.position = collection.position;
   if (collection.title !== undefined) dbCollection.title = collection.title;
   if (collection.subtitle !== undefined) dbCollection.subtitle = collection.subtitle;
   if (collection.image !== undefined) dbCollection.image = collection.image;
@@ -442,7 +444,8 @@ export const weightRoomQueries = {
   getAll: async () => {
     const { data, error } = await supabase
       .from('weight_room_collections')
-      .select('*');
+      .select('*')
+      .order('position', { ascending: true });
     
     if (error) throw error;
     return data.map(mapWeightRoomCollectionFromDb);

@@ -73,6 +73,7 @@ export const homeWidget = pgTable("home_widget", {
 
 export const weightRoomCollections = pgTable("weight_room_collections", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  position: integer("position").notNull(),
   title: text("title").notNull(),
   subtitle: text("subtitle"),
   image: text("image").notNull(),
