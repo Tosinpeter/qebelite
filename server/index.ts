@@ -1,17 +1,39 @@
-import { spawn } from 'child_process';
+import { createServer } from 'vite';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
 
-console.log('Starting Vite development server on port 5000...');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const projectRoot = resolve(__dirname, '..');
 
-const vite = spawn('npx', ['vite', '--port', '5000', '--host', '0.0.0.0'], {
-  stdio: 'inherit',
-  shell: true
-});
+async function startServer() {
+  try {
+    console.log('Starting Vite development server on port 5000...');
+    
+    const viteConfig = await import(resolve(projectRoot, 'vite.config.ts'));
+    const baseConfig = viteConfig.default;
+    
+    const server = await createServer({
+      ...baseConfig,
+      configFile: false,
+      server: {
+        ...baseConfig.server,
+        host: '0.0.0.0',
+        port: 5000,
+        allowedHosts: true,
+        hmr: {
+          clientPort: 443,
+          host: process.env.REPLIT_DEV_DOMAIN || 'localhost',
+        },
+      },
+    });
 
-vite.on('error', (error) => {
-  console.error('Failed to start Vite:', error);
-  process.exit(1);
-});
+    await server.listen();
+    server.printUrls();
+  } catch (error) {
+    console.error('Failed to start Vite:', error);
+    process.exit(1);
+  }
+}
 
-vite.on('exit', (code) => {
-  process.exit(code || 0);
-});
+startServer();
