@@ -7,7 +7,9 @@ import type {
   HomeWidget, 
   InsertHomeWidget,
   HomeSlide,
-  InsertHomeSlide
+  InsertHomeSlide,
+  HomeWidgetItem,
+  InsertHomeWidgetItem
 } from "@shared/schema";
 
 export interface IStorage {
@@ -28,6 +30,12 @@ export interface IStorage {
   createHomeSlide(slide: InsertHomeSlide): Promise<HomeSlide>;
   updateHomeSlide(id: string, slide: Partial<InsertHomeSlide>): Promise<HomeSlide | undefined>;
   deleteHomeSlide(id: string): Promise<boolean>;
+  
+  getHomeWidgetItems(): Promise<HomeWidgetItem[]>;
+  getHomeWidgetItem(id: string): Promise<HomeWidgetItem | undefined>;
+  createHomeWidgetItem(item: InsertHomeWidgetItem): Promise<HomeWidgetItem>;
+  updateHomeWidgetItem(id: string, item: Partial<InsertHomeWidgetItem>): Promise<HomeWidgetItem | undefined>;
+  deleteHomeWidgetItem(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -109,6 +117,33 @@ export class DatabaseStorage implements IStorage {
 
   async deleteHomeSlide(id: string): Promise<boolean> {
     const result = await db.delete(schema.homeSlider).where(eq(schema.homeSlider.id, id)).returning();
+    return result.length > 0;
+  }
+
+  async getHomeWidgetItems(): Promise<HomeWidgetItem[]> {
+    return db.select().from(schema.homeWidget);
+  }
+
+  async getHomeWidgetItem(id: string): Promise<HomeWidgetItem | undefined> {
+    const result = await db.select().from(schema.homeWidget).where(eq(schema.homeWidget.id, id));
+    return result[0];
+  }
+
+  async createHomeWidgetItem(item: InsertHomeWidgetItem): Promise<HomeWidgetItem> {
+    const result = await db.insert(schema.homeWidget).values(item).returning();
+    return result[0];
+  }
+
+  async updateHomeWidgetItem(id: string, item: Partial<InsertHomeWidgetItem>): Promise<HomeWidgetItem | undefined> {
+    const result = await db.update(schema.homeWidget)
+      .set(item)
+      .where(eq(schema.homeWidget.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async deleteHomeWidgetItem(id: string): Promise<boolean> {
+    const result = await db.delete(schema.homeWidget).where(eq(schema.homeWidget.id, id)).returning();
     return result.length > 0;
   }
 }

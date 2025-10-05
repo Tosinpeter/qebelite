@@ -6,6 +6,8 @@ import {
   updateHomeSliderSchema,
   insertHomeWidgetSchema,
   updateHomeWidgetSchema,
+  insertHomeWidgetItemSchema,
+  updateHomeWidgetItemSchema,
   insertUserSchema,
   updateUserSchema
 } from "@shared/schema";
@@ -195,6 +197,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const success = await storage.deleteHomeWidget(req.params.id);
       if (!success) {
         return res.status(404).json({ message: "Widget not found" });
+      }
+      res.status(204).send();
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Home Widget Items API
+  app.get("/api/home-widget-items", async (_req, res) => {
+    try {
+      const items = await storage.getHomeWidgetItems();
+      res.json(items);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/home-widget-items/:id", async (req, res) => {
+    try {
+      const item = await storage.getHomeWidgetItem(req.params.id);
+      if (!item) {
+        return res.status(404).json({ message: "Widget item not found" });
+      }
+      res.json(item);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/home-widget-items", async (req, res) => {
+    try {
+      const validatedData = insertHomeWidgetItemSchema.parse(req.body);
+      const item = await storage.createHomeWidgetItem(validatedData);
+      res.status(201).json(item);
+    } catch (error: any) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(400).json({ message: error.message });
+    }
+  });
+
+  app.patch("/api/home-widget-items/:id", async (req, res) => {
+    try {
+      const validatedData = updateHomeWidgetItemSchema.parse(req.body);
+      const item = await storage.updateHomeWidgetItem(req.params.id, validatedData);
+      if (!item) {
+        return res.status(404).json({ message: "Widget item not found" });
+      }
+      res.json(item);
+    } catch (error: any) {
+      if (error instanceof ZodError) {
+        return res.status(400).json({ message: "Validation error", errors: error.errors });
+      }
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/home-widget-items/:id", async (req, res) => {
+    try {
+      const success = await storage.deleteHomeWidgetItem(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Widget item not found" });
       }
       res.status(204).send();
     } catch (error: any) {
