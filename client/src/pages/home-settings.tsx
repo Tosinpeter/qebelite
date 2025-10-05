@@ -16,7 +16,7 @@ import { GripVertical, Eye, EyeOff, Plus, Edit, Trash2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import type { HomeBanner, HomeWidget } from "@shared/schema";
+import type { HomeSlide, HomeWidget } from "@shared/schema";
 
 export default function HomeSettings() {
   const { toast } = useToast();
@@ -25,47 +25,47 @@ export default function HomeSettings() {
     queryKey: ["/api/home-widgets"],
   });
 
-  const { data: banners = [], isLoading: bannersLoading } = useQuery<HomeBanner[]>({
-    queryKey: ["/api/home-banners"],
+  const { data: slides = [], isLoading: slidesLoading } = useQuery<HomeSlide[]>({
+    queryKey: ["/api/home-slider"],
   });
 
-  const [isBannerDialogOpen, setIsBannerDialogOpen] = useState(false);
-  const [editingBanner, setEditingBanner] = useState<HomeBanner | null>(null);
-  const [bannerForm, setBannerForm] = useState({
+  const [isSlideDialogOpen, setIsSlideDialogOpen] = useState(false);
+  const [editingSlide, setEditingSlide] = useState<HomeSlide | null>(null);
+  const [slideForm, setSlideForm] = useState({
     position: 0,
     imageUrl: "",
     redirectUrl: "",
   });
 
-  const createBannerMutation = useMutation({
+  const createSlideMutation = useMutation({
     mutationFn: (data: { position: number; imageUrl: string; redirectUrl: string }) =>
-      apiRequest("POST", "/api/home-banners", data),
+      apiRequest("POST", "/api/home-slider", data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-banners"] });
-      toast({ title: "Banner created successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/home-slider"] });
+      toast({ title: "Slide created successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
-  const updateBannerMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<HomeBanner> }) =>
-      apiRequest("PATCH", `/api/home-banners/${id}`, data),
+  const updateSlideMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<HomeSlide> }) =>
+      apiRequest("PATCH", `/api/home-slider/${id}`, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-banners"] });
-      toast({ title: "Banner updated successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/home-slider"] });
+      toast({ title: "Slide updated successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     },
   });
 
-  const deleteBannerMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/home-banners/${id}`),
+  const deleteSlideMutation = useMutation({
+    mutationFn: (id: string) => apiRequest("DELETE", `/api/home-slider/${id}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-banners"] });
-      toast({ title: "Banner deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/home-slider"] });
+      toast({ title: "Slide deleted successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -122,35 +122,35 @@ export default function HomeSettings() {
     });
   };
 
-  const handleCreateBanner = () => {
-    setEditingBanner(null);
-    setBannerForm({ position: banners.length, imageUrl: "", redirectUrl: "" });
-    setIsBannerDialogOpen(true);
+  const handleCreateSlide = () => {
+    setEditingSlide(null);
+    setSlideForm({ position: slides.length, imageUrl: "", redirectUrl: "" });
+    setIsSlideDialogOpen(true);
   };
 
-  const handleEditBanner = (banner: HomeBanner) => {
-    setEditingBanner(banner);
-    setBannerForm({
-      position: banner.position,
-      imageUrl: banner.imageUrl,
-      redirectUrl: banner.redirectUrl,
+  const handleEditSlide = (slide: HomeSlide) => {
+    setEditingSlide(slide);
+    setSlideForm({
+      position: slide.position,
+      imageUrl: slide.imageUrl,
+      redirectUrl: slide.redirectUrl,
     });
-    setIsBannerDialogOpen(true);
+    setIsSlideDialogOpen(true);
   };
 
-  const handleDeleteBanner = (id: string) => {
-    deleteBannerMutation.mutate(id);
+  const handleDeleteSlide = (id: string) => {
+    deleteSlideMutation.mutate(id);
   };
 
-  const handleSaveBanner = () => {
-    if (editingBanner) {
-      updateBannerMutation.mutate(
-        { id: editingBanner.id, data: bannerForm },
-        { onSuccess: () => setIsBannerDialogOpen(false) }
+  const handleSaveSlide = () => {
+    if (editingSlide) {
+      updateSlideMutation.mutate(
+        { id: editingSlide.id, data: slideForm },
+        { onSuccess: () => setIsSlideDialogOpen(false) }
       );
     } else {
-      createBannerMutation.mutate(bannerForm, {
-        onSuccess: () => setIsBannerDialogOpen(false),
+      createSlideMutation.mutate(slideForm, {
+        onSuccess: () => setIsSlideDialogOpen(false),
       });
     }
   };
@@ -161,7 +161,7 @@ export default function HomeSettings() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white" data-testid="text-page-title">Home Layout Settings</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Manage home page banners and widget layout
+            Manage home page slides and widget layout
           </p>
         </div>
       </div>
@@ -169,17 +169,17 @@ export default function HomeSettings() {
       <Card>
         <CardHeader className="border-b border-gray-200 dark:border-gray-700">
           <div className="flex justify-between items-center">
-            <CardTitle className="text-lg">Home Banners</CardTitle>
-            <Button onClick={handleCreateBanner} data-testid="button-create-banner">
+            <CardTitle className="text-lg">Home Slides</CardTitle>
+            <Button onClick={handleCreateSlide} data-testid="button-create-slide">
               <Plus className="h-4 w-4 mr-2" />
-              Add Banner
+              Add Slide
             </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {banners.length === 0 ? (
+          {slides.length === 0 ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              No banners configured. Click "Add Banner" to create one.
+              No slides configured. Click "Add Slide" to create one.
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -193,28 +193,28 @@ export default function HomeSettings() {
                   </tr>
                 </thead>
                 <tbody>
-                  {banners.sort((a, b) => a.position - b.position).map((banner) => (
+                  {slides.sort((a, b) => a.position - b.position).map((slide) => (
                     <tr
-                      key={banner.id}
+                      key={slide.id}
                       className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
-                      data-testid={`banner-row-${banner.id}`}
+                      data-testid={`slide-row-${slide.id}`}
                     >
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                        {banner.position}
+                        {slide.position}
                       </td>
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                        {banner.imageUrl}
+                        {slide.imageUrl}
                       </td>
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400 max-w-xs truncate">
-                        {banner.redirectUrl}
+                        {slide.redirectUrl}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditBanner(banner)}
-                            data-testid={`button-edit-banner-${banner.id}`}
+                            onClick={() => handleEditSlide(slide)}
+                            data-testid={`button-edit-slide-${slide.id}`}
                             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                           >
                             <Edit className="h-4 w-4 mr-1" />
@@ -223,8 +223,8 @@ export default function HomeSettings() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleDeleteBanner(banner.id)}
-                            data-testid={`button-delete-banner-${banner.id}`}
+                            onClick={() => handleDeleteSlide(slide.id)}
+                            data-testid={`button-delete-slide-${slide.id}`}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
                           >
                             <Trash2 className="h-4 w-4 mr-1" />
@@ -316,12 +316,12 @@ export default function HomeSettings() {
         </Card>
       </div>
 
-      <Dialog open={isBannerDialogOpen} onOpenChange={setIsBannerDialogOpen}>
-        <DialogContent data-testid="dialog-banner-form">
+      <Dialog open={isSlideDialogOpen} onOpenChange={setIsSlideDialogOpen}>
+        <DialogContent data-testid="dialog-slide-form">
           <DialogHeader>
-            <DialogTitle>{editingBanner ? "Edit Banner" : "Create New Banner"}</DialogTitle>
+            <DialogTitle>{editingSlide ? "Edit Slide" : "Create New Slide"}</DialogTitle>
             <DialogDescription>
-              {editingBanner ? "Update banner details" : "Add a new banner to the home page"}
+              {editingSlide ? "Update slide details" : "Add a new slide to the home page"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -332,9 +332,9 @@ export default function HomeSettings() {
                 type="number"
                 min="0"
                 placeholder="0"
-                value={bannerForm.position}
-                onChange={(e) => setBannerForm({ ...bannerForm, position: parseInt(e.target.value) || 0 })}
-                data-testid="input-banner-position"
+                value={slideForm.position}
+                onChange={(e) => setSlideForm({ ...slideForm, position: parseInt(e.target.value) || 0 })}
+                data-testid="input-slide-position"
               />
             </div>
             <div className="space-y-2">
@@ -342,10 +342,10 @@ export default function HomeSettings() {
               <Input
                 id="imageUrl"
                 type="url"
-                placeholder="https://example.com/banner.jpg"
-                value={bannerForm.imageUrl}
-                onChange={(e) => setBannerForm({ ...bannerForm, imageUrl: e.target.value })}
-                data-testid="input-banner-image"
+                placeholder="https://example.com/slide.jpg"
+                value={slideForm.imageUrl}
+                onChange={(e) => setSlideForm({ ...slideForm, imageUrl: e.target.value })}
+                data-testid="input-slide-image"
               />
             </div>
             <div className="space-y-2">
@@ -354,18 +354,18 @@ export default function HomeSettings() {
                 id="redirectUrl"
                 type="url"
                 placeholder="https://example.com/destination"
-                value={bannerForm.redirectUrl}
-                onChange={(e) => setBannerForm({ ...bannerForm, redirectUrl: e.target.value })}
-                data-testid="input-banner-redirect"
+                value={slideForm.redirectUrl}
+                onChange={(e) => setSlideForm({ ...slideForm, redirectUrl: e.target.value })}
+                data-testid="input-slide-redirect"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBannerDialogOpen(false)} data-testid="button-cancel">
+            <Button variant="outline" onClick={() => setIsSlideDialogOpen(false)} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button onClick={handleSaveBanner} data-testid="button-save-banner">
-              {editingBanner ? "Save Changes" : "Create Banner"}
+            <Button onClick={handleSaveSlide} data-testid="button-save-slide">
+              {editingSlide ? "Save Changes" : "Create Slide"}
             </Button>
           </DialogFooter>
         </DialogContent>

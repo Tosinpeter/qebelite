@@ -6,8 +6,8 @@ import type {
   InsertUser, 
   HomeWidget, 
   InsertHomeWidget,
-  HomeBanner,
-  InsertHomeBanner
+  HomeSlide,
+  InsertHomeSlide
 } from "@shared/schema";
 
 export interface IStorage {
@@ -23,11 +23,11 @@ export interface IStorage {
   updateHomeWidget(id: string, widget: Partial<InsertHomeWidget>): Promise<HomeWidget | undefined>;
   deleteHomeWidget(id: string): Promise<boolean>;
   
-  getHomeBanners(): Promise<HomeBanner[]>;
-  getHomeBanner(id: string): Promise<HomeBanner | undefined>;
-  createHomeBanner(banner: InsertHomeBanner): Promise<HomeBanner>;
-  updateHomeBanner(id: string, banner: Partial<InsertHomeBanner>): Promise<HomeBanner | undefined>;
-  deleteHomeBanner(id: string): Promise<boolean>;
+  getHomeSlides(): Promise<HomeSlide[]>;
+  getHomeSlide(id: string): Promise<HomeSlide | undefined>;
+  createHomeSlide(slide: InsertHomeSlide): Promise<HomeSlide>;
+  updateHomeSlide(id: string, slide: Partial<InsertHomeSlide>): Promise<HomeSlide | undefined>;
+  deleteHomeSlide(id: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -85,30 +85,30 @@ export class DatabaseStorage implements IStorage {
     return result.length > 0;
   }
 
-  async getHomeBanners(): Promise<HomeBanner[]> {
-    return db.select().from(schema.homeBanners);
+  async getHomeSlides(): Promise<HomeSlide[]> {
+    return db.select().from(schema.homeSlider);
   }
 
-  async getHomeBanner(id: string): Promise<HomeBanner | undefined> {
-    const result = await db.select().from(schema.homeBanners).where(eq(schema.homeBanners.id, id));
+  async getHomeSlide(id: string): Promise<HomeSlide | undefined> {
+    const result = await db.select().from(schema.homeSlider).where(eq(schema.homeSlider.id, id));
     return result[0];
   }
 
-  async createHomeBanner(banner: InsertHomeBanner): Promise<HomeBanner> {
-    const result = await db.insert(schema.homeBanners).values(banner).returning();
+  async createHomeSlide(slide: InsertHomeSlide): Promise<HomeSlide> {
+    const result = await db.insert(schema.homeSlider).values(slide).returning();
     return result[0];
   }
 
-  async updateHomeBanner(id: string, banner: Partial<InsertHomeBanner>): Promise<HomeBanner | undefined> {
-    const result = await db.update(schema.homeBanners)
-      .set(banner)
-      .where(eq(schema.homeBanners.id, id))
+  async updateHomeSlide(id: string, slide: Partial<InsertHomeSlide>): Promise<HomeSlide | undefined> {
+    const result = await db.update(schema.homeSlider)
+      .set(slide)
+      .where(eq(schema.homeSlider.id, id))
       .returning();
     return result[0];
   }
 
-  async deleteHomeBanner(id: string): Promise<boolean> {
-    const result = await db.delete(schema.homeBanners).where(eq(schema.homeBanners.id, id)).returning();
+  async deleteHomeSlide(id: string): Promise<boolean> {
+    const result = await db.delete(schema.homeSlider).where(eq(schema.homeSlider.id, id)).returning();
     return result.length > 0;
   }
 }

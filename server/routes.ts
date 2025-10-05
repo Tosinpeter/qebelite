@@ -2,8 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
-  insertHomeBannerSchema, 
-  updateHomeBannerSchema,
+  insertHomeSliderSchema, 
+  updateHomeSliderSchema,
   insertHomeWidgetSchema,
   updateHomeWidgetSchema,
   insertUserSchema,
@@ -79,33 +79,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Home Banners API
-  app.get("/api/home-banners", async (_req, res) => {
+  // Home Slider API
+  app.get("/api/home-slider", async (_req, res) => {
     try {
-      const banners = await storage.getHomeBanners();
-      res.json(banners);
+      const slides = await storage.getHomeSlides();
+      res.json(slides);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
 
-  app.get("/api/home-banners/:id", async (req, res) => {
+  app.get("/api/home-slider/:id", async (req, res) => {
     try {
-      const banner = await storage.getHomeBanner(req.params.id);
-      if (!banner) {
-        return res.status(404).json({ message: "Banner not found" });
+      const slide = await storage.getHomeSlide(req.params.id);
+      if (!slide) {
+        return res.status(404).json({ message: "Slide not found" });
       }
-      res.json(banner);
+      res.json(slide);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   });
 
-  app.post("/api/home-banners", async (req, res) => {
+  app.post("/api/home-slider", async (req, res) => {
     try {
-      const validatedData = insertHomeBannerSchema.parse(req.body);
-      const banner = await storage.createHomeBanner(validatedData);
-      res.status(201).json(banner);
+      const validatedData = insertHomeSliderSchema.parse(req.body);
+      const slide = await storage.createHomeSlide(validatedData);
+      res.status(201).json(slide);
     } catch (error: any) {
       if (error instanceof ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -114,14 +114,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/home-banners/:id", async (req, res) => {
+  app.patch("/api/home-slider/:id", async (req, res) => {
     try {
-      const validatedData = updateHomeBannerSchema.parse(req.body);
-      const banner = await storage.updateHomeBanner(req.params.id, validatedData);
-      if (!banner) {
-        return res.status(404).json({ message: "Banner not found" });
+      const validatedData = updateHomeSliderSchema.parse(req.body);
+      const slide = await storage.updateHomeSlide(req.params.id, validatedData);
+      if (!slide) {
+        return res.status(404).json({ message: "Slide not found" });
       }
-      res.json(banner);
+      res.json(slide);
     } catch (error: any) {
       if (error instanceof ZodError) {
         return res.status(400).json({ message: "Validation error", errors: error.errors });
@@ -130,11 +130,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/home-banners/:id", async (req, res) => {
+  app.delete("/api/home-slider/:id", async (req, res) => {
     try {
-      const success = await storage.deleteHomeBanner(req.params.id);
+      const success = await storage.deleteHomeSlide(req.params.id);
       if (!success) {
-        return res.status(404).json({ message: "Banner not found" });
+        return res.status(404).json({ message: "Slide not found" });
       }
       res.status(204).send();
     } catch (error: any) {

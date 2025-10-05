@@ -53,20 +53,11 @@ export const homeWidgets = pgTable("home_widgets", {
   config: text("config"),
 });
 
-export const homeBanners = pgTable("home_banners", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  position: integer("position").notNull(),
-  imageUrl: text("image_url").notNull(),
-  redirectUrl: text("redirect_url").notNull(),
-});
-
 export const homeSlider = pgTable("home_slider", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   position: integer("position").notNull(),
   imageUrl: text("image_url").notNull(),
   redirectUrl: text("redirect_url").notNull(),
-  title: text("title"),
-  description: text("description"),
 });
 
 export const weightRoomCollections = pgTable("weight_room_collections", {
@@ -84,8 +75,6 @@ export const insertNutritionPlanSchema = createInsertSchema(nutritionPlans).omit
 export const insertTrainingVideoSchema = createInsertSchema(trainingVideos).omit({ id: true });
 export const insertHomeWidgetSchema = createInsertSchema(homeWidgets).omit({ id: true });
 export const updateHomeWidgetSchema = insertHomeWidgetSchema.partial();
-export const insertHomeBannerSchema = createInsertSchema(homeBanners).omit({ id: true });
-export const updateHomeBannerSchema = insertHomeBannerSchema.partial();
 export const insertHomeSliderSchema = createInsertSchema(homeSlider).omit({ id: true });
 export const updateHomeSliderSchema = insertHomeSliderSchema.partial();
 export const insertWeightRoomCollectionSchema = createInsertSchema(weightRoomCollections).omit({ id: true });
@@ -100,8 +89,6 @@ export type TrainingVideo = typeof trainingVideos.$inferSelect;
 export type InsertTrainingVideo = z.infer<typeof insertTrainingVideoSchema>;
 export type HomeWidget = typeof homeWidgets.$inferSelect;
 export type InsertHomeWidget = z.infer<typeof insertHomeWidgetSchema>;
-export type HomeBanner = typeof homeBanners.$inferSelect;
-export type InsertHomeBanner = z.infer<typeof insertHomeBannerSchema>;
 export type HomeSlide = typeof homeSlider.$inferSelect;
 export type InsertHomeSlide = z.infer<typeof insertHomeSliderSchema>;
 export type WeightRoomCollection = typeof weightRoomCollections.$inferSelect;
