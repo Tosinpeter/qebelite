@@ -334,17 +334,11 @@ export default function NutritionManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-start gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold" data-testid="text-page-title">Nutrition Management</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage recipes and meal plans
-          </p>
-        </div>
-        <Button onClick={() => handleOpenDialog()} data-testid="button-create-recipe">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Recipe
-        </Button>
+      <div>
+        <h1 className="text-2xl font-semibold" data-testid="text-page-title">Nutrition Management</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Manage recipes and meal plans
+        </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -355,6 +349,12 @@ export default function NutritionManagement() {
         </TabsList>
 
         <TabsContent value="daily" className="space-y-4 mt-6">
+          <div className="flex justify-end">
+            <Button onClick={() => handleOpenDialog()} data-testid="button-create-recipe">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Recipe
+            </Button>
+          </div>
           {isLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
@@ -429,6 +429,12 @@ export default function NutritionManagement() {
         </TabsContent>
 
         <TabsContent value="weekly" className="space-y-4 mt-6">
+          <div className="flex justify-end">
+            <Button onClick={() => handleOpenDialog()} data-testid="button-create-weekly-recipe">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Recipe
+            </Button>
+          </div>
           {isLoading ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               {[1, 2, 3, 4].map((i) => (
@@ -503,6 +509,12 @@ export default function NutritionManagement() {
         </TabsContent>
 
         <TabsContent value="videos" className="space-y-4 mt-6">
+          <div className="flex justify-end">
+            <Button data-testid="button-create-video">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Nutrition Video
+            </Button>
+          </div>
           {isLoadingVideos ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {[1, 2, 3, 4, 5, 6].map((i) => (
