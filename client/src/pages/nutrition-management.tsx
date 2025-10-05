@@ -33,11 +33,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { recipeQueries, storageHelpers } from "@/lib/supabase-queries";
+import { recipeQueries, nutritionVideoQueries, storageHelpers } from "@/lib/supabase-queries";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import type { Recipe } from "@shared/schema";
+import type { Recipe, NutritionVideo } from "@shared/schema";
+import { Play, Video } from "lucide-react";
 
 export default function NutritionManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -63,6 +64,11 @@ export default function NutritionManagement() {
   const { data: recipes, isLoading } = useQuery({
     queryKey: ['/recipes'],
     queryFn: () => recipeQueries.getAll(),
+  });
+
+  const { data: videos, isLoading: isLoadingVideos } = useQuery({
+    queryKey: ['/nutrition-videos'],
+    queryFn: () => nutritionVideoQueries.getAll(),
   });
 
   const createMutation = useMutation({
@@ -345,6 +351,7 @@ export default function NutritionManagement() {
         <TabsList data-testid="tabs-nutrition">
           <TabsTrigger value="daily" data-testid="tab-daily">Daily Recipes</TabsTrigger>
           <TabsTrigger value="weekly" data-testid="tab-weekly">Weekly Meal Prep</TabsTrigger>
+          <TabsTrigger value="videos" data-testid="tab-videos">Nutrition Videos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="daily" className="space-y-4 mt-6">
@@ -491,6 +498,75 @@ export default function NutritionManagement() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="videos" className="space-y-4 mt-6">
+          {isLoadingVideos ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Card key={i}>
+                  <CardHeader className="p-0">
+                    <Skeleton className="aspect-video w-full rounded-t-md" />
+                  </CardHeader>
+                  <CardContent className="p-4 space-y-2">
+                    <Skeleton className="h-5 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (videos && videos.length > 0) ? (
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {videos.map((video) => (
+                <Card key={video.id} className="hover-elevate overflow-hidden" data-testid={`video-item-${video.id}`}>
+                  <CardHeader className="p-0">
+                    <div className="aspect-video relative overflow-hidden bg-muted">
+                      {video.thumbnail ? (
+                        <img 
+                          src={video.thumbnail} 
+                          alt={video.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-muted">
+                          <Video className="h-12 w-12 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="rounded-full bg-primary p-3">
+                          <Play className="h-6 w-6 text-primary-foreground fill-current" />
+                        </div>
+                      </div>
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="secondary" className="bg-black/60 text-white border-0">
+                          {video.category}
+                        </Badge>
+                      </div>
+                      {video.duration && (
+                        <div className="absolute bottom-2 right-2">
+                          <Badge variant="secondary" className="bg-black/80 text-white border-0">
+                            {Math.floor(video.duration / 60)}:{String(video.duration % 60).padStart(2, '0')}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <h3 className="font-semibold text-base line-clamp-1 mb-1">{video.title}</h3>
+                    {video.description && (
+                      <p className="text-sm text-muted-foreground line-clamp-2">{video.description}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <Video className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <h3 className="text-lg font-semibold mb-1">No videos yet</h3>
+              <p className="text-sm text-muted-foreground">Create the nutrition_videos table in Supabase to get started</p>
             </div>
           )}
         </TabsContent>

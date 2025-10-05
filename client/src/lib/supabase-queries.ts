@@ -9,7 +9,8 @@ import type {
   HomeWidgetItem,
   WeightRoomCollection,
   WeightRoomVideo,
-  Recipe
+  Recipe,
+  NutritionVideo
 } from '@shared/schema';
 
 const mapUserFromDb = (dbUser: any): User => ({
@@ -675,6 +676,114 @@ export const recipeQueries = {
   delete: async (id: string) => {
     const { error } = await supabase
       .from('recipes')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  }
+};
+
+export const nutritionVideoQueries = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('nutrition_videos')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data.map(video => ({
+      id: video.id,
+      createdAt: video.created_at,
+      title: video.title,
+      description: video.description,
+      category: video.category,
+      videoUrl: video.video_url,
+      thumbnail: video.thumbnail,
+      duration: video.duration,
+    })) as NutritionVideo[];
+  },
+
+  getById: async (id: string) => {
+    const { data, error} = await supabase
+      .from('nutrition_videos')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return {
+      id: data.id,
+      createdAt: data.created_at,
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      videoUrl: data.video_url,
+      thumbnail: data.thumbnail,
+      duration: data.duration,
+    } as NutritionVideo;
+  },
+
+  create: async (video: Partial<NutritionVideo>) => {
+    const dbVideo = {
+      title: video.title,
+      description: video.description,
+      category: video.category,
+      video_url: video.videoUrl,
+      thumbnail: video.thumbnail,
+      duration: video.duration,
+    };
+
+    const { data, error } = await supabase
+      .from('nutrition_videos')
+      .insert(dbVideo)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return {
+      id: data.id,
+      createdAt: data.created_at,
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      videoUrl: data.video_url,
+      thumbnail: data.thumbnail,
+      duration: data.duration,
+    } as NutritionVideo;
+  },
+
+  update: async (id: string, updates: Partial<NutritionVideo>) => {
+    const dbUpdates: any = {};
+    if (updates.title !== undefined) dbUpdates.title = updates.title;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.category !== undefined) dbUpdates.category = updates.category;
+    if (updates.videoUrl !== undefined) dbUpdates.video_url = updates.videoUrl;
+    if (updates.thumbnail !== undefined) dbUpdates.thumbnail = updates.thumbnail;
+    if (updates.duration !== undefined) dbUpdates.duration = updates.duration;
+
+    const { data, error } = await supabase
+      .from('nutrition_videos')
+      .update(dbUpdates)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return {
+      id: data.id,
+      createdAt: data.created_at,
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      videoUrl: data.video_url,
+      thumbnail: data.thumbnail,
+      duration: data.duration,
+    } as NutritionVideo;
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('nutrition_videos')
       .delete()
       .eq('id', id);
     
