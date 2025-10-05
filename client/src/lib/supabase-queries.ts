@@ -86,10 +86,9 @@ export const userQueries = {
   },
 
   delete: async (id: string) => {
-    const { error } = await supabase
-      .from('user_profiles')
-      .delete()
-      .eq('id', id);
+    const { error } = await supabase.rpc('delete_user_and_auth', {
+      user_id: id
+    });
     
     if (error) throw error;
   }
