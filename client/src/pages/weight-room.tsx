@@ -32,9 +32,11 @@ import type { WeightRoomCollection, WeightRoomVideo } from "@shared/schema";
 export default function WeightRoom() {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("collections");
   const [selectedCollectionId, setSelectedCollectionId] = useState<string>("all");
   const [editingCollection, setEditingCollection] = useState<WeightRoomCollection | null>(null);
+  const [editingVideo, setEditingVideo] = useState<WeightRoomVideo | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [formData, setFormData] = useState({
@@ -42,6 +44,12 @@ export default function WeightRoom() {
     title: "",
     subtitle: "",
     image: "",
+  });
+  const [videoFormData, setVideoFormData] = useState({
+    collectionId: "",
+    title: "",
+    description: "",
+    videoUrl: "",
   });
 
   const { data: collections = [], isLoading } = useQuery<WeightRoomCollection[]>({
@@ -84,6 +92,42 @@ export default function WeightRoom() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weight-room-collections'] });
       toast({ title: "Collection deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const createVideoMutation = useMutation({
+    mutationFn: (data: Partial<WeightRoomVideo>) => weightRoomVideoQueries.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weight-room-videos'] });
+      toast({ title: "Video created successfully" });
+      setIsVideoDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const updateVideoMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<WeightRoomVideo> }) =>
+      weightRoomVideoQueries.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weight-room-videos'] });
+      toast({ title: "Video updated successfully" });
+      setIsVideoDialogOpen(false);
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const deleteVideoMutation = useMutation({
+    mutationFn: (id: string) => weightRoomVideoQueries.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['weight-room-videos'] });
+      toast({ title: "Video deleted successfully" });
     },
     onError: (error: any) => {
       toast({ title: "Error", description: error.message, variant: "destructive" });
@@ -182,6 +226,51 @@ export default function WeightRoom() {
     }
   };
 
+  const handleCreateVideo = () => {
+    setEditingVideo(null);
+    setVideoFormData({
+      collectionId: selectedCollectionId !== "all" ? selectedCollectionId : collections[0]?.id || "",
+      title: "",
+      description: "",
+      videoUrl: "",
+    });
+    setIsVideoDialogOpen(true);
+  };
+
+  const handleEditVideo = (video: WeightRoomVideo) => {
+    setEditingVideo(video);
+    setVideoFormData({
+      collectionId: video.collectionId,
+      title: video.title,
+      description: video.description || "",
+      videoUrl: video.videoUrl,
+    });
+    setIsVideoDialogOpen(true);
+  };
+
+  const handleDeleteVideo = (video: WeightRoomVideo) => {
+    if (confirm(`Are you sure you want to delete "${video.title}"?`)) {
+      deleteVideoMutation.mutate(video.id);
+    }
+  };
+
+  const handleSaveVideo = () => {
+    if (!videoFormData.title || !videoFormData.videoUrl || !videoFormData.collectionId) {
+      toast({
+        variant: "destructive",
+        title: "Missing required fields",
+        description: "Collection, title, and video URL are required",
+      });
+      return;
+    }
+
+    if (editingVideo) {
+      updateVideoMutation.mutate({ id: editingVideo.id, data: videoFormData });
+    } else {
+      createVideoMutation.mutate(videoFormData);
+    }
+  };
+
   const filteredVideos = selectedCollectionId === "all" 
     ? videos 
     : videos.filter(v => v.collectionId === selectedCollectionId);
@@ -268,21 +357,27 @@ export default function WeightRoom() {
         </TabsContent>
 
         <TabsContent value="videos" className="space-y-4 mt-6">
-          <div className="flex items-center gap-4">
-            <Label htmlFor="collection-filter" className="text-sm font-medium">Filter by Collection:</Label>
-            <Select value={selectedCollectionId} onValueChange={setSelectedCollectionId}>
-              <SelectTrigger className="w-64" data-testid="select-collection-filter">
-                <SelectValue placeholder="Select a collection" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Collections</SelectItem>
-                {collections.map((collection) => (
-                  <SelectItem key={collection.id} value={collection.id}>
-                    {collection.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Label htmlFor="collection-filter" className="text-sm font-medium">Filter by Collection:</Label>
+              <Select value={selectedCollectionId} onValueChange={setSelectedCollectionId}>
+                <SelectTrigger className="w-64" data-testid="select-collection-filter">
+                  <SelectValue placeholder="Select a collection" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Collections</SelectItem>
+                  {collections.map((collection) => (
+                    <SelectItem key={collection.id} value={collection.id}>
+                      {collection.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleCreateVideo} data-testid="button-add-video">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Video
+            </Button>
           </div>
 
           {videosLoading ? (
@@ -327,9 +422,19 @@ export default function WeightRoom() {
                       <Button 
                         size="sm" 
                         variant="ghost"
+                        onClick={() => handleEditVideo(video)}
                         data-testid={`button-edit-video-${video.id}`}
                       >
                         <Edit className="h-3 w-3" />
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => handleDeleteVideo(video)}
+                        data-testid={`button-delete-video-${video.id}`}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
                   </CardContent>
@@ -443,6 +548,81 @@ export default function WeightRoom() {
               data-testid="button-save-collection"
             >
               {createMutation.isPending || updateMutation.isPending ? "Saving..." : editingCollection ? "Save Changes" : "Create Collection"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isVideoDialogOpen} onOpenChange={setIsVideoDialogOpen}>
+        <DialogContent data-testid="dialog-video-form">
+          <DialogHeader>
+            <DialogTitle>{editingVideo ? "Edit Video" : "Add New Video"}</DialogTitle>
+            <DialogDescription>
+              {editingVideo ? "Update video details" : "Add a new training video to a collection"}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="video-collection">Collection</Label>
+              <Select 
+                value={videoFormData.collectionId} 
+                onValueChange={(value) => setVideoFormData({ ...videoFormData, collectionId: value })}
+              >
+                <SelectTrigger id="video-collection" data-testid="select-video-collection">
+                  <SelectValue placeholder="Select a collection" />
+                </SelectTrigger>
+                <SelectContent>
+                  {collections.map((collection) => (
+                    <SelectItem key={collection.id} value={collection.id}>
+                      {collection.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="video-title">Title</Label>
+              <Input
+                id="video-title"
+                placeholder="Video title"
+                value={videoFormData.title}
+                onChange={(e) => setVideoFormData({ ...videoFormData, title: e.target.value })}
+                data-testid="input-video-title"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="video-description">Description</Label>
+              <Textarea
+                id="video-description"
+                placeholder="Video description (optional)"
+                value={videoFormData.description}
+                onChange={(e) => setVideoFormData({ ...videoFormData, description: e.target.value })}
+                data-testid="input-video-description"
+                rows={3}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="video-url">Video URL</Label>
+              <Input
+                id="video-url"
+                type="url"
+                placeholder="https://example.com/video.mp4"
+                value={videoFormData.videoUrl}
+                onChange={(e) => setVideoFormData({ ...videoFormData, videoUrl: e.target.value })}
+                data-testid="input-video-url"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsVideoDialogOpen(false)} data-testid="button-cancel-video">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSaveVideo}
+              disabled={createVideoMutation.isPending || updateVideoMutation.isPending}
+              data-testid="button-save-video"
+            >
+              {createVideoMutation.isPending || updateVideoMutation.isPending ? "Saving..." : editingVideo ? "Save Changes" : "Add Video"}
             </Button>
           </DialogFooter>
         </DialogContent>
