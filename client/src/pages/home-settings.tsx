@@ -35,10 +35,11 @@ export default function HomeSettings() {
     position: 0,
     imageUrl: "",
     redirectUrl: "",
+    text: "",
   });
 
   const createSlideMutation = useMutation({
-    mutationFn: (data: { position: number; imageUrl: string; redirectUrl: string }) =>
+    mutationFn: (data: { position: number; imageUrl: string; redirectUrl: string; text?: string }) =>
       apiRequest("POST", "/api/home-slider", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/home-slider"] });
@@ -124,7 +125,7 @@ export default function HomeSettings() {
 
   const handleCreateSlide = () => {
     setEditingSlide(null);
-    setSlideForm({ position: slides.length, imageUrl: "", redirectUrl: "" });
+    setSlideForm({ position: slides.length, imageUrl: "", redirectUrl: "", text: "" });
     setIsSlideDialogOpen(true);
   };
 
@@ -134,6 +135,7 @@ export default function HomeSettings() {
       position: slide.position,
       imageUrl: slide.imageUrl,
       redirectUrl: slide.redirectUrl,
+      text: slide.text || "",
     });
     setIsSlideDialogOpen(true);
   };
@@ -187,6 +189,7 @@ export default function HomeSettings() {
                 <thead className="text-xs text-gray-700 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="px-6 py-3">Position</th>
+                    <th className="px-6 py-3">Text</th>
                     <th className="px-6 py-3">Image URL</th>
                     <th className="px-6 py-3">Redirect URL</th>
                     <th className="px-6 py-3">Actions</th>
@@ -201,6 +204,9 @@ export default function HomeSettings() {
                     >
                       <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
                         {slide.position}
+                      </td>
+                      <td className="px-6 py-4 text-gray-900 dark:text-white max-w-xs truncate">
+                        {slide.text || "-"}
                       </td>
                       <td className="px-6 py-4 text-gray-500 dark:text-gray-400 max-w-xs truncate">
                         {slide.imageUrl}
@@ -335,6 +341,17 @@ export default function HomeSettings() {
                 value={slideForm.position}
                 onChange={(e) => setSlideForm({ ...slideForm, position: parseInt(e.target.value) || 0 })}
                 data-testid="input-slide-position"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="text">Text</Label>
+              <Input
+                id="text"
+                type="text"
+                placeholder="Slide title or description"
+                value={slideForm.text}
+                onChange={(e) => setSlideForm({ ...slideForm, text: e.target.value })}
+                data-testid="input-slide-text"
               />
             </div>
             <div className="space-y-2">
