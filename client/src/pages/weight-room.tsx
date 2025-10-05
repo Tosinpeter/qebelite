@@ -310,6 +310,24 @@ export default function WeightRoom() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const getYouTubeVideoId = (url: string): string | null => {
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+      /^([a-zA-Z0-9_-]{11})$/
+    ];
+    
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match) return match[1];
+    }
+    return null;
+  };
+
+  const getYouTubeThumbnail = (url: string): string | null => {
+    const videoId = getYouTubeVideoId(url);
+    return videoId ? `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg` : null;
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -462,13 +480,32 @@ export default function WeightRoom() {
           ) : (
             <>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {paginatedVideos.map((video) => (
-                  <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
-                  <CardHeader className="p-0">
-                    <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative">
-                      <Play className="h-12 w-12 text-primary" />
-                    </div>
-                  </CardHeader>
+                {paginatedVideos.map((video) => {
+                  const thumbnail = getYouTubeThumbnail(video.videoUrl);
+                  
+                  return (
+                    <Card key={video.id} className="hover-elevate" data-testid={`training-video-${video.id}`}>
+                      <CardHeader className="p-0">
+                        <div className="aspect-video bg-muted rounded-t-md flex items-center justify-center relative overflow-hidden">
+                          {thumbnail ? (
+                            <>
+                              <img 
+                                src={thumbnail} 
+                                alt={video.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                <Play className="h-16 w-16 text-white drop-shadow-lg" />
+                              </div>
+                            </>
+                          ) : (
+                            <Play className="h-12 w-12 text-primary" />
+                          )}
+                        </div>
+                      </CardHeader>
                   <CardContent className="p-4">
                     <div className="space-y-2">
                       <div className="font-medium text-sm" data-testid={`text-video-title-${video.id}`}>
@@ -511,7 +548,8 @@ export default function WeightRoom() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                  );
+                })}
               </div>
 
               {totalVideoPages > 1 && (
