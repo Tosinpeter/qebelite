@@ -17,8 +17,10 @@ import NutritionManagement from "@/pages/nutrition-management";
 import HomeSettings from "@/pages/home-settings";
 import WeightRoom from "@/pages/weight-room";
 import SignIn from "@/pages/sign-in";
+import SignUp from "@/pages/sign-up";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
+import { useLocation } from "wouter";
 
 function Router() {
   return (
@@ -38,6 +40,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [location, setLocation] = useLocation();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -66,7 +69,11 @@ export default function App() {
     return (
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
-          <SignIn onSignIn={() => setIsAuthenticated(true)} />
+          {location === "/sign-up" ? (
+            <SignUp onSignUp={() => setLocation("/sign-in")} />
+          ) : (
+            <SignIn onSignIn={() => setIsAuthenticated(true)} />
+          )}
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>

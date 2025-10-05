@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import logoPath from "@assets/logo_1759609546853.png";
+import { Link } from "wouter";
 
 interface SignInProps {
   onSignIn: () => void;
@@ -108,6 +109,12 @@ export default function SignIn({ onSignIn }: SignInProps) {
             <Button type="submit" className="w-full" disabled={isLoading} data-testid="button-sign-in">
               {isLoading ? "Signing in..." : "Sign in"}
             </Button>
+            <div className="text-center text-sm">
+              Don't have an account?{" "}
+              <Link href="/sign-up" className="text-primary hover:underline" data-testid="link-sign-up">
+                Sign up
+              </Link>
+            </div>
           </form>
         </CardContent>
       </Card>
