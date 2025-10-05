@@ -18,21 +18,20 @@ import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { HomeSlide, HomeWidget, HomeWidgetItem } from "@shared/schema";
 import { supabase } from "@/lib/supabase";
+import { homeSlideQueries, homeWidgetItemQueries } from "@/lib/supabase-queries";
 import { Upload } from "lucide-react";
 
 export default function HomeSettings() {
   const { toast } = useToast();
   
-  const { data: widgets = [], isLoading: widgetsLoading } = useQuery<HomeWidget[]>({
-    queryKey: ["/api/home-widgets"],
-  });
-
   const { data: slides = [], isLoading: slidesLoading } = useQuery<HomeSlide[]>({
-    queryKey: ["/api/home-slider"],
+    queryKey: ['home-slides'],
+    queryFn: homeSlideQueries.getAll,
   });
 
   const { data: widgetItems = [], isLoading: widgetItemsLoading } = useQuery<HomeWidgetItem[]>({
-    queryKey: ["/api/home-widget-items"],
+    queryKey: ['home-widget-items'],
+    queryFn: homeWidgetItemQueries.getAll,
   });
 
   const [isSlideDialogOpen, setIsSlideDialogOpen] = useState(false);
@@ -57,10 +56,9 @@ export default function HomeSettings() {
   const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   const createSlideMutation = useMutation({
-    mutationFn: (data: { position: number; imageUrl: string; redirectUrl: string; text?: string }) =>
-      apiRequest("POST", "/api/home-slider", data),
+    mutationFn: (data: Partial<HomeSlide>) => homeSlideQueries.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-slider"] });
+      queryClient.invalidateQueries({ queryKey: ['home-slides'] });
       toast({ title: "Slide created successfully" });
     },
     onError: (error: any) => {
@@ -70,9 +68,9 @@ export default function HomeSettings() {
 
   const updateSlideMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<HomeSlide> }) =>
-      apiRequest("PATCH", `/api/home-slider/${id}`, data),
+      homeSlideQueries.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-slider"] });
+      queryClient.invalidateQueries({ queryKey: ['home-slides'] });
       toast({ title: "Slide updated successfully" });
     },
     onError: (error: any) => {
@@ -81,9 +79,9 @@ export default function HomeSettings() {
   });
 
   const deleteSlideMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/home-slider/${id}`),
+    mutationFn: (id: string) => homeSlideQueries.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-slider"] });
+      queryClient.invalidateQueries({ queryKey: ['home-slides'] });
       toast({ title: "Slide deleted successfully" });
     },
     onError: (error: any) => {
@@ -91,22 +89,10 @@ export default function HomeSettings() {
     },
   });
 
-  const updateWidgetMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<HomeWidget> }) =>
-      apiRequest("PATCH", `/api/home-widgets/${id}`, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-widgets"] });
-    },
-    onError: (error: any) => {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    },
-  });
-
   const createWidgetItemMutation = useMutation({
-    mutationFn: (data: { position: number; image: string; title: string; subtitle?: string; redirectUrl: string }) =>
-      apiRequest("POST", "/api/home-widget-items", data),
+    mutationFn: (data: Partial<HomeWidgetItem>) => homeWidgetItemQueries.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-widget-items"] });
+      queryClient.invalidateQueries({ queryKey: ['home-widget-items'] });
       toast({ title: "Widget created successfully" });
     },
     onError: (error: any) => {
@@ -116,9 +102,9 @@ export default function HomeSettings() {
 
   const updateWidgetItemMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<HomeWidgetItem> }) =>
-      apiRequest("PATCH", `/api/home-widget-items/${id}`, data),
+      homeWidgetItemQueries.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-widget-items"] });
+      queryClient.invalidateQueries({ queryKey: ['home-widget-items'] });
       toast({ title: "Widget updated successfully" });
     },
     onError: (error: any) => {
@@ -127,9 +113,9 @@ export default function HomeSettings() {
   });
 
   const deleteWidgetItemMutation = useMutation({
-    mutationFn: (id: string) => apiRequest("DELETE", `/api/home-widget-items/${id}`),
+    mutationFn: (id: string) => homeWidgetItemQueries.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/home-widget-items"] });
+      queryClient.invalidateQueries({ queryKey: ['home-widget-items'] });
       toast({ title: "Widget deleted successfully" });
     },
     onError: (error: any) => {
@@ -137,44 +123,6 @@ export default function HomeSettings() {
     },
   });
 
-  const [draggedItem, setDraggedItem] = useState<HomeWidget | null>(null);
-
-  const handleDragStart = (widget: HomeWidget) => {
-    setDraggedItem(widget);
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-  };
-
-  const handleDrop = async (targetWidget: HomeWidget) => {
-    if (!draggedItem || draggedItem.id === targetWidget.id) return;
-
-    const newWidgets = [...widgets];
-    const draggedIndex = newWidgets.findIndex(w => w.id === draggedItem.id);
-    const targetIndex = newWidgets.findIndex(w => w.id === targetWidget.id);
-
-    newWidgets.splice(draggedIndex, 1);
-    newWidgets.splice(targetIndex, 0, draggedItem);
-
-    for (let i = 0; i < newWidgets.length; i++) {
-      if (newWidgets[i].position !== i) {
-        await updateWidgetMutation.mutateAsync({ 
-          id: newWidgets[i].id, 
-          data: { position: i } 
-        });
-      }
-    }
-    
-    setDraggedItem(null);
-  };
-
-  const toggleVisibility = (widget: HomeWidget) => {
-    updateWidgetMutation.mutate({ 
-      id: widget.id, 
-      data: { visible: !widget.visible } 
-    });
-  };
 
   const handleCreateSlide = () => {
     setEditingSlide(null);
