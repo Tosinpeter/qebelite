@@ -77,8 +77,8 @@ The Supabase-only architecture eliminates the need for a custom backend server, 
 5. **Home Widgets** - Configurable dashboard widgets with positioning and visibility controls
 6. **Home Banners** - Promotional banners with images and redirect URLs
 7. **Athlete Resources** - External resource links with images, descriptions, and positioning
-8. **Coaching Availability** - Admin-controlled weekly availability schedule for 1:1 coaching sessions
-9. **Coaching Sessions** - Booked 1:1 coaching appointments with client details and session status
+8. **Coaching Availability** - Admin-controlled weekly availability schedule for 1:1 coaching sessions (admin sets availability, users book via mobile app)
+9. **Coaching Sessions** - Booked 1:1 coaching appointments with client details and session status (booked by users via mobile app)
 
 **Schema Design Decisions:**
 - UUID primary keys (`gen_random_uuid()`) for distributed systems compatibility

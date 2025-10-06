@@ -27,7 +27,7 @@ const menuGroups = [
         icon: Calendar,
       },
       {
-        title: "Schedule 1:1 Coaching",
+        title: "Manage Coach Availability",
         url: "/schedule-coaching",
         icon: CalendarClock,
       },
