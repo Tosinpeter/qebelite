@@ -119,6 +119,28 @@ export const athleteResources = pgTable("athlete_resources", {
   externalUrl: text("external_url").notNull(),
 });
 
+export const coachingAvailability = pgTable("coaching_availability", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  dayOfWeek: integer("day_of_week").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  sessionDuration: integer("session_duration").notNull().default(60),
+  active: boolean("active").notNull().default(true),
+});
+
+export const coachingSessions = pgTable("coaching_sessions", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
+  clientName: text("client_name").notNull(),
+  clientEmail: text("client_email").notNull(),
+  clientPhone: text("client_phone"),
+  sessionDate: timestamp("session_date").notNull(),
+  startTime: text("start_time").notNull(),
+  endTime: text("end_time").notNull(),
+  status: text("status").notNull().default("pending"),
+  notes: text("notes"),
+});
+
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const updateUserSchema = insertUserSchema.partial();
 export const insertHuddleSchema = createInsertSchema(huddles).omit({ id: true });
@@ -135,6 +157,8 @@ export const insertWeightRoomVideoSchema = createInsertSchema(weightRoomVideos).
 export const insertRecipeSchema = createInsertSchema(recipes).omit({ id: true, createdAt: true });
 export const insertNutritionVideoSchema = createInsertSchema(nutritionVideos).omit({ id: true, createdAt: true });
 export const insertAthleteResourceSchema = createInsertSchema(athleteResources).omit({ id: true, createdAt: true });
+export const insertCoachingAvailabilitySchema = createInsertSchema(coachingAvailability).omit({ id: true });
+export const insertCoachingSessionSchema = createInsertSchema(coachingSessions).omit({ id: true, createdAt: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -160,3 +184,7 @@ export type NutritionVideo = typeof nutritionVideos.$inferSelect;
 export type InsertNutritionVideo = z.infer<typeof insertNutritionVideoSchema>;
 export type AthleteResource = typeof athleteResources.$inferSelect;
 export type InsertAthleteResource = z.infer<typeof insertAthleteResourceSchema>;
+export type CoachingAvailability = typeof coachingAvailability.$inferSelect;
+export type InsertCoachingAvailability = z.infer<typeof insertCoachingAvailabilitySchema>;
+export type CoachingSession = typeof coachingSessions.$inferSelect;
+export type InsertCoachingSession = z.infer<typeof insertCoachingSessionSchema>;
