@@ -18,6 +18,199 @@ import type { CoachingSession } from "@shared/schema";
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+function AvailabilityManager({ onClose }: { onClose: () => void }) {
+  const { toast } = useToast();
+  const [isAddingNew, setIsAddingNew] = useState(false);
+  const [formData, setFormData] = useState({
+    dayOfWeek: 0,
+    startTime: "09:00",
+    endTime: "17:00",
+    sessionDuration: 60,
+  });
+
+  const { data: allAvailability = [], isLoading } = useQuery({
+    queryKey: ['/api/coaching-availability-all'],
+    queryFn: () => coachingAvailabilityQueries.getAll(),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => coachingAvailabilityQueries.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coaching-availability-all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coaching-availability'] });
+      toast({ title: "Availability Added", description: "New availability slot has been added." });
+      setIsAddingNew(false);
+      setFormData({ dayOfWeek: 0, startTime: "09:00", endTime: "17:00", sessionDuration: 60 });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to Add", 
+        description: error.message || "Failed to add availability",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => coachingAvailabilityQueries.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coaching-availability-all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coaching-availability'] });
+      toast({ title: "Updated", description: "Availability has been updated." });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => coachingAvailabilityQueries.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coaching-availability-all'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/coaching-availability'] });
+      toast({ title: "Deleted", description: "Availability has been removed." });
+    },
+  });
+
+  const handleAdd = () => {
+    createMutation.mutate(formData);
+  };
+
+  const toggleActive = (id: string, currentActive: boolean) => {
+    updateMutation.mutate({ id, data: { active: !currentActive } });
+  };
+
+  return (
+    <div className="space-y-4">
+      {isLoading ? (
+        <div className="text-center py-8 text-muted-foreground">Loading availability...</div>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {allAvailability.map((slot) => (
+              <div key={slot.id} className="flex items-center justify-between p-3 border rounded-md" data-testid={`availability-${slot.id}`}>
+                <div className="flex items-center gap-4">
+                  <div className="w-28">
+                    <div className="font-medium">{DAYS_OF_WEEK[slot.dayOfWeek]}</div>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    {slot.startTime} - {slot.endTime}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    ({slot.sessionDuration} min sessions)
+                  </div>
+                  <Badge variant={slot.active ? "default" : "secondary"}>
+                    {slot.active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleActive(slot.id, slot.active)}
+                    disabled={updateMutation.isPending}
+                    data-testid={`button-toggle-${slot.id}`}
+                  >
+                    {slot.active ? "Deactivate" : "Activate"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteMutation.mutate(slot.id)}
+                    disabled={deleteMutation.isPending}
+                    data-testid={`button-delete-${slot.id}`}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {!isAddingNew ? (
+            <Button onClick={() => setIsAddingNew(true)} className="w-full" data-testid="button-add-availability">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Availability
+            </Button>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle>Add New Availability</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Day of Week</Label>
+                    <Select
+                      value={String(formData.dayOfWeek)}
+                      onValueChange={(value) => setFormData({ ...formData, dayOfWeek: Number(value) })}
+                    >
+                      <SelectTrigger data-testid="select-day">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DAYS_OF_WEEK.map((day, idx) => (
+                          <SelectItem key={idx} value={String(idx)}>{day}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Session Duration (minutes)</Label>
+                    <Input
+                      type="number"
+                      value={formData.sessionDuration}
+                      onChange={(e) => setFormData({ ...formData, sessionDuration: Number(e.target.value) })}
+                      data-testid="input-duration"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Start Time</Label>
+                    <Input
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                      data-testid="input-start-time"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>End Time</Label>
+                    <Input
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                      data-testid="input-end-time"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddingNew(false);
+                      setFormData({ dayOfWeek: 0, startTime: "09:00", endTime: "17:00", sessionDuration: 60 });
+                    }}
+                    data-testid="button-cancel-add"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    onClick={handleAdd}
+                    disabled={createMutation.isPending}
+                    data-testid="button-save-availability"
+                  >
+                    {createMutation.isPending ? "Saving..." : "Save"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function ScheduleCoachingPage() {
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -151,16 +344,14 @@ export default function ScheduleCoachingPage() {
               Manage Availability
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Manage Coaching Availability</DialogTitle>
               <DialogDescription>
                 Set your weekly availability for 1:1 coaching sessions
               </DialogDescription>
             </DialogHeader>
-            <div className="text-center py-8 text-muted-foreground">
-              Availability management interface will be added next
-            </div>
+            <AvailabilityManager onClose={() => setAvailabilityDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
