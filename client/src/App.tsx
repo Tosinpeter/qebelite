@@ -27,6 +27,7 @@ import HomeSettings from "@/pages/home-settings";
 import WeightRoom from "@/pages/weight-room";
 import AthleteResources from "@/pages/athlete-resources";
 import ScheduleCoaching from "@/pages/schedule-coaching";
+import Profile from "@/pages/profile";
 import SignIn from "@/pages/sign-in";
 import SignUp from "@/pages/sign-up";
 import { useState, useEffect } from "react";
@@ -46,6 +47,7 @@ function Router() {
       <Route path="/athlete-resources" component={AthleteResources} />
       <Route path="/schedule-coaching" component={ScheduleCoaching} />
       <Route path="/home-settings" component={HomeSettings} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -214,7 +216,10 @@ export default function App() {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem data-testid="menu-item-profile">
+                    <DropdownMenuItem 
+                      onClick={() => setLocation("/profile")}
+                      data-testid="menu-item-profile"
+                    >
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
