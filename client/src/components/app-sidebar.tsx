@@ -1,4 +1,4 @@
-import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard, BookOpen } from "lucide-react";
+import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard, BookOpen, CalendarClock } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImage from "@assets/logo_1759665184540.png";
 
@@ -25,6 +25,11 @@ const menuGroups = [
         title: "Huddles",
         url: "/huddles",
         icon: Calendar,
+      },
+      {
+        title: "Schedule 1:1 Coaching",
+        url: "/schedule-coaching",
+        icon: CalendarClock,
       },
     ],
   },

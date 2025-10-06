@@ -25,6 +25,7 @@ import NutritionManagement from "@/pages/nutrition-management";
 import HomeSettings from "@/pages/home-settings";
 import WeightRoom from "@/pages/weight-room";
 import AthleteResources from "@/pages/athlete-resources";
+import ScheduleCoaching from "@/pages/schedule-coaching";
 import SignIn from "@/pages/sign-in";
 import SignUp from "@/pages/sign-up";
 import { useState, useEffect } from "react";
@@ -41,6 +42,7 @@ function Router() {
       <Route path="/nutrition" component={NutritionManagement} />
       <Route path="/weight-room" component={WeightRoom} />
       <Route path="/athlete-resources" component={AthleteResources} />
+      <Route path="/schedule-coaching" component={ScheduleCoaching} />
       <Route path="/home-settings" component={HomeSettings} />
       <Route component={NotFound} />
     </Switch>
