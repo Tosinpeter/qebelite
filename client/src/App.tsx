@@ -7,7 +7,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +34,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import { coachingSessionQueries } from "@/lib/supabase-queries";
+import { coachingSessionQueries, userQueries } from "@/lib/supabase-queries";
 
 function Router() {
   return (
@@ -129,6 +129,76 @@ function NotificationBell() {
   );
 }
 
+function UserAvatar() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [location, setLocation] = useLocation();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+      }
+    });
+  }, []);
+
+  const { data: user } = useQuery({
+    queryKey: ['/users', userId],
+    queryFn: () => userQueries.getById(userId!),
+    enabled: !!userId,
+  });
+
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="relative h-10 w-10 rounded-full" data-testid="button-user-menu">
+          <Avatar>
+            <AvatarImage src={user?.avatarUrl || ""} />
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {user?.displayName ? getInitials(user.displayName) : <User className="h-5 w-5" />}
+            </AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => setLocation("/profile")}
+          data-testid="menu-item-profile"
+        >
+          <User className="mr-2 h-4 w-4" />
+          <span>Profile</span>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={async () => {
+            try {
+              const { error } = await supabase.auth.signOut();
+              if (error) throw error;
+              window.location.href = '/sign-in';
+            } catch (error: any) {
+              console.error('Logout error:', error);
+            }
+          }}
+          data-testid="menu-item-logout"
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Logout</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -205,53 +275,7 @@ export default function App() {
               <div className="flex items-center gap-2">
                 <NotificationBell />
                 <ThemeToggle />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-10 w-10 rounded-full" data-testid="button-user-menu">
-                      <Avatar>
-                        <AvatarFallback className="bg-primary text-primary-foreground">AD</AvatarFallback>
-                      </Avatar>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={() => setLocation("/profile")}
-                      data-testid="menu-item-profile"
-                    >
-                      <User className="mr-2 h-4 w-4" />
-                      <span>Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem 
-                      onClick={async () => {
-                        try {
-                          const { error } = await supabase.auth.signOut();
-                          if (error) throw error;
-                          
-                          setIsAuthenticated(false);
-                          setLocation("/sign-in");
-                          
-                          toast({
-                            title: "Logged out successfully",
-                            description: "You have been signed out of your account.",
-                          });
-                        } catch (error: any) {
-                          toast({
-                            title: "Logout failed",
-                            description: error.message || "An error occurred while logging out",
-                            variant: "destructive",
-                          });
-                        }
-                      }}
-                      data-testid="menu-item-logout"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Logout</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <UserAvatar />
               </div>
             </header>
             <main className="flex-1 overflow-y-auto p-6 bg-gray-50 dark:bg-gray-900">
