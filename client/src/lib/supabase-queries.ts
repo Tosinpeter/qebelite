@@ -11,7 +11,9 @@ import type {
   WeightRoomVideo,
   Recipe,
   NutritionVideo,
-  AthleteResource
+  AthleteResource,
+  CoachingAvailability,
+  CoachingSession
 } from '@shared/schema';
 
 const mapUserFromDb = (dbUser: any): User => ({
@@ -858,6 +860,192 @@ export const athleteResourceQueries = {
   delete: async (id: string) => {
     const { error } = await supabase
       .from('athlete_resources')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+};
+
+const mapCoachingAvailabilityFromDb = (dbAvailability: any): CoachingAvailability => ({
+  id: dbAvailability.id,
+  dayOfWeek: dbAvailability.day_of_week,
+  startTime: dbAvailability.start_time,
+  endTime: dbAvailability.end_time,
+  sessionDuration: dbAvailability.session_duration,
+  active: dbAvailability.active,
+});
+
+const mapCoachingAvailabilityToDb = (availability: Partial<CoachingAvailability>): any => {
+  const dbAvailability: any = {};
+  if (availability.dayOfWeek !== undefined) dbAvailability.day_of_week = availability.dayOfWeek;
+  if (availability.startTime !== undefined) dbAvailability.start_time = availability.startTime;
+  if (availability.endTime !== undefined) dbAvailability.end_time = availability.endTime;
+  if (availability.sessionDuration !== undefined) dbAvailability.session_duration = availability.sessionDuration;
+  if (availability.active !== undefined) dbAvailability.active = availability.active;
+  return dbAvailability;
+};
+
+export const coachingAvailabilityQueries = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('coaching_availability')
+      .select('*')
+      .order('day_of_week', { ascending: true })
+      .order('start_time', { ascending: true });
+    
+    if (error) throw error;
+    return data.map(mapCoachingAvailabilityFromDb);
+  },
+
+  getActive: async () => {
+    const { data, error } = await supabase
+      .from('coaching_availability')
+      .select('*')
+      .eq('active', true)
+      .order('day_of_week', { ascending: true })
+      .order('start_time', { ascending: true });
+    
+    if (error) throw error;
+    return data.map(mapCoachingAvailabilityFromDb);
+  },
+
+  getById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('coaching_availability')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return mapCoachingAvailabilityFromDb(data);
+  },
+
+  create: async (availability: Partial<CoachingAvailability>) => {
+    const dbAvailability = mapCoachingAvailabilityToDb(availability);
+    const { data, error } = await supabase
+      .from('coaching_availability')
+      .insert(dbAvailability)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapCoachingAvailabilityFromDb(data);
+  },
+
+  update: async (id: string, availability: Partial<CoachingAvailability>) => {
+    const dbAvailability = mapCoachingAvailabilityToDb(availability);
+    const { data, error } = await supabase
+      .from('coaching_availability')
+      .update(dbAvailability)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapCoachingAvailabilityFromDb(data);
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('coaching_availability')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
+};
+
+const mapCoachingSessionFromDb = (dbSession: any): CoachingSession => ({
+  id: dbSession.id,
+  createdAt: dbSession.created_at,
+  clientName: dbSession.client_name,
+  clientEmail: dbSession.client_email,
+  clientPhone: dbSession.client_phone,
+  sessionDate: dbSession.session_date,
+  startTime: dbSession.start_time,
+  endTime: dbSession.end_time,
+  status: dbSession.status,
+  notes: dbSession.notes,
+});
+
+const mapCoachingSessionToDb = (session: Partial<CoachingSession>): any => {
+  const dbSession: any = {};
+  if (session.clientName !== undefined) dbSession.client_name = session.clientName;
+  if (session.clientEmail !== undefined) dbSession.client_email = session.clientEmail;
+  if (session.clientPhone !== undefined) dbSession.client_phone = session.clientPhone;
+  if (session.sessionDate !== undefined) dbSession.session_date = session.sessionDate;
+  if (session.startTime !== undefined) dbSession.start_time = session.startTime;
+  if (session.endTime !== undefined) dbSession.end_time = session.endTime;
+  if (session.status !== undefined) dbSession.status = session.status;
+  if (session.notes !== undefined) dbSession.notes = session.notes;
+  return dbSession;
+};
+
+export const coachingSessionQueries = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('coaching_sessions')
+      .select('*')
+      .order('session_date', { ascending: true })
+      .order('start_time', { ascending: true });
+    
+    if (error) throw error;
+    return data.map(mapCoachingSessionFromDb);
+  },
+
+  getUpcoming: async () => {
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('coaching_sessions')
+      .select('*')
+      .gte('session_date', now)
+      .order('session_date', { ascending: true })
+      .order('start_time', { ascending: true });
+    
+    if (error) throw error;
+    return data.map(mapCoachingSessionFromDb);
+  },
+
+  getById: async (id: string) => {
+    const { data, error } = await supabase
+      .from('coaching_sessions')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) throw error;
+    return mapCoachingSessionFromDb(data);
+  },
+
+  create: async (session: Partial<CoachingSession>) => {
+    const dbSession = mapCoachingSessionToDb(session);
+    const { data, error } = await supabase
+      .from('coaching_sessions')
+      .insert(dbSession)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapCoachingSessionFromDb(data);
+  },
+
+  update: async (id: string, session: Partial<CoachingSession>) => {
+    const dbSession = mapCoachingSessionToDb(session);
+    const { data, error } = await supabase
+      .from('coaching_sessions')
+      .update(dbSession)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapCoachingSessionFromDb(data);
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('coaching_sessions')
       .delete()
       .eq('id', id);
     
