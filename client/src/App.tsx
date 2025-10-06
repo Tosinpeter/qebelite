@@ -1,6 +1,6 @@
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "@/components/app-sidebar";
@@ -16,6 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import { Bell, Search, Menu, LogOut, User } from "lucide-react";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
@@ -32,6 +33,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { coachingSessionQueries } from "@/lib/supabase-queries";
 
 function Router() {
   return (
@@ -46,6 +48,38 @@ function Router() {
       <Route path="/home-settings" component={HomeSettings} />
       <Route component={NotFound} />
     </Switch>
+  );
+}
+
+function NotificationBell() {
+  const [location, setLocation] = useLocation();
+  
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['/api/coaching-sessions'],
+    queryFn: () => coachingSessionQueries.getAll(),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const pendingCount = sessions.filter(s => s.status === 'pending').length;
+
+  return (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      className="relative"
+      onClick={() => setLocation('/schedule-coaching')}
+      data-testid="button-notifications"
+    >
+      <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+      {pendingCount > 0 && (
+        <Badge 
+          className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+          variant="destructive"
+        >
+          {pendingCount}
+        </Badge>
+      )}
+    </Button>
   );
 }
 
@@ -123,9 +157,7 @@ export default function App() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon" data-testid="button-notifications">
-                  <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                </Button>
+                <NotificationBell />
                 <ThemeToggle />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
