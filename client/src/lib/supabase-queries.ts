@@ -836,7 +836,7 @@ export const athleteResourceQueries = {
     const { data, error } = await supabase
       .from('athlete_resources')
       .select('*')
-      .order('position', { ascending: true });
+      .order('created_at', { ascending: false });
     
     if (error) throw error;
     return data?.map(mapAthleteResourceFromDb) || [];
