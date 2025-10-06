@@ -420,8 +420,9 @@ export default function HuddleManagement() {
                 <Input 
                   id="date" 
                   type="datetime-local" 
-                  value={formData.scheduledAt}
+                  value={formData.scheduledAt || ''}
                   onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                  min={new Date().toISOString().slice(0, 16)}
                   data-testid="input-huddle-datetime" 
                 />
               </div>
