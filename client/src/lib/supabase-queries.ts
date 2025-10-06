@@ -108,6 +108,7 @@ const mapHuddleFromDb = (dbHuddle: any): Huddle => ({
   scheduledAt: dbHuddle.scheduled_at,
   duration: dbHuddle.duration,
   status: dbHuddle.status,
+  image: dbHuddle.image,
 });
 
 const mapHuddleToDb = (huddle: Partial<Huddle>) => ({
@@ -116,6 +117,7 @@ const mapHuddleToDb = (huddle: Partial<Huddle>) => ({
   scheduled_at: huddle.scheduledAt,
   duration: huddle.duration,
   status: huddle.status,
+  image: huddle.image,
 });
 
 export const huddleQueries = {

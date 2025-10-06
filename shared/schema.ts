@@ -24,6 +24,7 @@ export const huddles = pgTable("huddles", {
   scheduledAt: timestamp("scheduled_at").notNull(),
   duration: integer("duration").notNull(),
   status: text("status").notNull().default("upcoming"),
+  image: text("image"),
 });
 
 export const nutritionPlans = pgTable("nutrition_plans", {

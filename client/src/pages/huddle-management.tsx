@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar as CalendarIcon, Clock, Trash2 } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, Trash2, Upload, Link as LinkIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -15,9 +15,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 import { huddleQueries } from "@/lib/supabase-queries";
+import { supabase } from "@/lib/supabase";
 import type { Huddle, InsertHuddle } from "@shared/schema";
 
 export default function HuddleManagement() {
@@ -26,13 +28,16 @@ export default function HuddleManagement() {
   const [editingHuddle, setEditingHuddle] = useState<Huddle | null>(null);
   const [nextHuddle, setNextHuddle] = useState<Huddle | null>(null);
   const [countdown, setCountdown] = useState("");
+  const [imagePreview, setImagePreview] = useState<string>("");
+  const [uploadingImage, setUploadingImage] = useState(false);
   
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     scheduledAt: "",
     duration: 30,
-    status: "upcoming"
+    status: "upcoming",
+    image: "",
   });
 
   const { data: huddles = [], isLoading } = useQuery({
@@ -97,8 +102,10 @@ export default function HuddleManagement() {
       description: "",
       scheduledAt: "",
       duration: 30,
-      status: "upcoming"
+      status: "upcoming",
+      image: "",
     });
+    setImagePreview("");
   };
 
   const handleOpenDialog = (huddle?: Huddle) => {
@@ -109,13 +116,73 @@ export default function HuddleManagement() {
         description: huddle.description || "",
         scheduledAt: new Date(huddle.scheduledAt).toISOString().slice(0, 16),
         duration: huddle.duration,
-        status: huddle.status
+        status: huddle.status,
+        image: huddle.image || "",
       });
+      setImagePreview(huddle.image || "");
     } else {
       setEditingHuddle(null);
       resetForm();
     }
     setIsDialogOpen(true);
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Image must be less than 5MB",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setUploadingImage(true);
+
+    try {
+      const fileName = `huddle-${Date.now()}-${file.name.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.-]/g, '')}`;
+      const { data, error } = await supabase.storage
+        .from('recipe-images')
+        .upload(fileName, file);
+
+      if (error) {
+        if (error.message.includes('Bucket not found')) {
+          toast({
+            title: "Storage Not Configured",
+            description: "Please create 'recipe-images' bucket in Supabase Storage with public access policies.",
+            variant: "destructive",
+            duration: 10000,
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('recipe-images')
+        .getPublicUrl(fileName);
+
+      setFormData({ ...formData, image: publicUrl });
+      setImagePreview(publicUrl);
+      toast({ title: "Success", description: "Image uploaded successfully" });
+    } catch (error: any) {
+      toast({
+        title: "Upload failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleImageUrlChange = (url: string) => {
+    setFormData({ ...formData, image: url });
+    setImagePreview(url);
   };
 
   const handleSubmit = () => {
@@ -133,7 +200,8 @@ export default function HuddleManagement() {
       description: formData.description,
       scheduledAt: new Date(formData.scheduledAt),
       duration: formData.duration,
-      status: formData.status
+      status: formData.status,
+      image: formData.image,
     };
 
     if (editingHuddle) {
@@ -199,27 +267,36 @@ export default function HuddleManagement() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div>
-                <div className="font-semibold text-lg" data-testid="text-next-huddle-title">{nextHuddle.title}</div>
-                <p className="text-sm text-muted-foreground">{nextHuddle.description}</p>
-              </div>
-              <div className="text-3xl font-bold font-mono tracking-tight" data-testid="text-huddle-countdown">
-                {countdown || "Loading..."}
-              </div>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <CalendarIcon className="h-4 w-4" />
-                  {new Date(nextHuddle.scheduledAt).toLocaleString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
+            <div className="flex gap-4">
+              {nextHuddle.image && (
+                <img 
+                  src={nextHuddle.image} 
+                  alt={nextHuddle.title}
+                  className="w-24 h-24 rounded-md object-cover"
+                />
+              )}
+              <div className="space-y-3 flex-1">
+                <div>
+                  <div className="font-semibold text-lg" data-testid="text-next-huddle-title">{nextHuddle.title}</div>
+                  <p className="text-sm text-muted-foreground">{nextHuddle.description}</p>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  {nextHuddle.duration} min
+                <div className="text-3xl font-bold font-mono tracking-tight" data-testid="text-huddle-countdown">
+                  {countdown || "Loading..."}
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <CalendarIcon className="h-4 w-4" />
+                    {new Date(nextHuddle.scheduledAt).toLocaleString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="h-4 w-4" />
+                    {nextHuddle.duration} min
+                  </div>
                 </div>
               </div>
             </div>
@@ -245,28 +322,37 @@ export default function HuddleManagement() {
                   data-testid={`huddle-item-${huddle.id}`}
                 >
                   <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <div className="font-medium">{huddle.title}</div>
-                        <Badge variant="outline">{huddle.status}</Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {huddle.description}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3" />
-                          {new Date(huddle.scheduledAt).toLocaleString('en-US', {
-                            weekday: 'short',
-                            month: 'short',
-                            day: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit'
-                          })}
+                    <div className="flex gap-4 flex-1">
+                      {huddle.image && (
+                        <img 
+                          src={huddle.image} 
+                          alt={huddle.title}
+                          className="w-16 h-16 rounded-md object-cover"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="font-medium">{huddle.title}</div>
+                          <Badge variant="outline">{huddle.status}</Badge>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {huddle.duration} min
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {huddle.description}
+                        </p>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <CalendarIcon className="h-3 w-3" />
+                            {new Date(huddle.scheduledAt).toLocaleString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {huddle.duration} min
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -298,7 +384,7 @@ export default function HuddleManagement() {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent data-testid="dialog-huddle-form">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto" data-testid="dialog-huddle-form">
           <DialogHeader>
             <DialogTitle>{editingHuddle ? "Edit Huddle" : "Schedule New Huddle"}</DialogTitle>
             <DialogDescription>
@@ -348,6 +434,52 @@ export default function HuddleManagement() {
                   data-testid="input-huddle-duration" 
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Huddle Image</Label>
+              <Tabs defaultValue="upload" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="upload" data-testid="tab-upload">
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload
+                  </TabsTrigger>
+                  <TabsTrigger value="url" data-testid="tab-url">
+                    <LinkIcon className="h-4 w-4 mr-2" />
+                    URL
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="upload" className="space-y-2">
+                  <Input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    data-testid="input-image-upload"
+                  />
+                  {uploadingImage && (
+                    <p className="text-sm text-muted-foreground">Uploading image...</p>
+                  )}
+                </TabsContent>
+                <TabsContent value="url" className="space-y-2">
+                  <Input
+                    placeholder="https://example.com/image.jpg"
+                    value={formData.image}
+                    onChange={(e) => handleImageUrlChange(e.target.value)}
+                    data-testid="input-image-url"
+                  />
+                </TabsContent>
+              </Tabs>
+              {imagePreview && (
+                <div className="mt-2">
+                  <img
+                    src={imagePreview}
+                    alt="Preview"
+                    className="w-full h-48 object-cover rounded-md"
+                    data-testid="img-preview"
+                  />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
