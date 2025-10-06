@@ -101,6 +101,23 @@ export const userQueries = {
   }
 };
 
+const mapHuddleFromDb = (dbHuddle: any): Huddle => ({
+  id: dbHuddle.id,
+  title: dbHuddle.title,
+  description: dbHuddle.description,
+  scheduledAt: dbHuddle.scheduled_at,
+  duration: dbHuddle.duration,
+  status: dbHuddle.status,
+});
+
+const mapHuddleToDb = (huddle: Partial<Huddle>) => ({
+  title: huddle.title,
+  description: huddle.description,
+  scheduled_at: huddle.scheduledAt,
+  duration: huddle.duration,
+  status: huddle.status,
+});
+
 export const huddleQueries = {
   getAll: async () => {
     const { data, error } = await supabase
@@ -109,7 +126,7 @@ export const huddleQueries = {
       .order('scheduled_at', { ascending: true });
     
     if (error) throw error;
-    return data as Huddle[];
+    return data.map(mapHuddleFromDb);
   },
 
   getById: async (id: string) => {
@@ -120,30 +137,32 @@ export const huddleQueries = {
       .single();
     
     if (error) throw error;
-    return data as Huddle;
+    return mapHuddleFromDb(data);
   },
 
   create: async (huddle: Partial<Huddle>) => {
+    const dbHuddle = mapHuddleToDb(huddle);
     const { data, error } = await supabase
       .from('huddles')
-      .insert(huddle)
+      .insert(dbHuddle)
       .select()
       .single();
     
     if (error) throw error;
-    return data as Huddle;
+    return mapHuddleFromDb(data);
   },
 
   update: async (id: string, updates: Partial<Huddle>) => {
+    const dbUpdates = mapHuddleToDb(updates);
     const { data, error } = await supabase
       .from('huddles')
-      .update(updates)
+      .update(dbUpdates)
       .eq('id', id)
       .select()
       .single();
     
     if (error) throw error;
-    return data as Huddle;
+    return mapHuddleFromDb(data);
   },
 
   delete: async (id: string) => {
