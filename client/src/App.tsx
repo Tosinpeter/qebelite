@@ -60,26 +60,70 @@ function NotificationBell() {
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const pendingCount = sessions.filter(s => s.status === 'pending').length;
+  const pendingSessions = sessions.filter(s => s.status === 'pending');
+  const pendingCount = pendingSessions.length;
 
   return (
-    <Button 
-      variant="ghost" 
-      size="icon" 
-      className="relative"
-      onClick={() => setLocation('/schedule-coaching')}
-      data-testid="button-notifications"
-    >
-      <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-      {pendingCount > 0 && (
-        <Badge 
-          className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-          variant="destructive"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="relative"
+          data-testid="button-notifications"
         >
-          {pendingCount}
-        </Badge>
-      )}
-    </Button>
+          <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+          {pendingCount > 0 && (
+            <Badge 
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              variant="destructive"
+            >
+              {pendingCount}
+            </Badge>
+          )}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuLabel>New Coach Bookings</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {pendingCount === 0 ? (
+          <div className="px-3 py-4 text-sm text-muted-foreground text-center">
+            No new bookings
+          </div>
+        ) : (
+          <>
+            <div className="max-h-[400px] overflow-y-auto">
+              {pendingSessions.map((session) => (
+                <DropdownMenuItem 
+                  key={session.id}
+                  onClick={() => setLocation('/schedule-coaching')}
+                  className="flex flex-col items-start gap-1 py-3 cursor-pointer"
+                  data-testid={`notification-${session.id}`}
+                >
+                  <div className="font-medium">{session.clientName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {new Date(session.sessionDate).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })} at {session.startTime}
+                  </div>
+                  <div className="text-xs text-muted-foreground">{session.clientEmail}</div>
+                </DropdownMenuItem>
+              ))}
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              onClick={() => setLocation('/schedule-coaching')}
+              className="text-center justify-center font-medium text-primary"
+              data-testid="view-all-notifications"
+            >
+              View All Bookings
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
