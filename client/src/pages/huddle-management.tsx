@@ -259,31 +259,33 @@ export default function HuddleManagement() {
       </div>
 
       {nextHuddle && (
-        <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarIcon className="h-5 w-5 text-primary" />
-              Next Huddle
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              {nextHuddle.image && (
-                <img 
-                  src={nextHuddle.image} 
-                  alt={nextHuddle.title}
-                  className="w-24 h-24 rounded-md object-cover"
-                />
-              )}
-              <div className="space-y-3 flex-1">
+        <Card className="relative overflow-hidden border-primary/20">
+          {nextHuddle.image && (
+            <>
+              <div 
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${nextHuddle.image})` }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-br from-black/70 to-black/50" />
+            </>
+          )}
+          <div className="relative">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2 text-white">
+                <CalendarIcon className="h-5 w-5" />
+                Next Huddle
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
                 <div>
-                  <div className="font-semibold text-lg" data-testid="text-next-huddle-title">{nextHuddle.title}</div>
-                  <p className="text-sm text-muted-foreground">{nextHuddle.description}</p>
+                  <div className="font-semibold text-lg text-white" data-testid="text-next-huddle-title">{nextHuddle.title}</div>
+                  <p className="text-sm text-white/80">{nextHuddle.description}</p>
                 </div>
-                <div className="text-3xl font-bold font-mono tracking-tight" data-testid="text-huddle-countdown">
+                <div className="text-3xl font-bold font-mono tracking-tight text-white" data-testid="text-huddle-countdown">
                   {countdown || "Loading..."}
                 </div>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-sm text-white/80">
                   <div className="flex items-center gap-1">
                     <CalendarIcon className="h-4 w-4" />
                     {new Date(nextHuddle.scheduledAt).toLocaleString('en-US', {
@@ -299,8 +301,8 @@ export default function HuddleManagement() {
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
+            </CardContent>
+          </div>
         </Card>
       )}
 
