@@ -1,4 +1,13 @@
-import { Users, Calendar, Apple, Home, Dumbbell, LayoutDashboard, BookOpen, CalendarClock } from "lucide-react";
+import {
+  Users,
+  Calendar,
+  Apple,
+  Home,
+  Dumbbell,
+  LayoutDashboard,
+  BookOpen,
+  CalendarClock,
+} from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImage from "@assets/logo_1759665184540.png";
 
@@ -27,7 +36,7 @@ const menuGroups = [
         icon: Calendar,
       },
       {
-        title: "Manage Coach Availability",
+        title: "Coach Availability",
         url: "/schedule-coaching",
         icon: CalendarClock,
       },
@@ -74,19 +83,17 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 pt-[18px] pb-[18px]">
           <div className="flex items-center gap-2 px-3">
-            <img 
-              src={logoImage} 
-              alt="QEB Elite Logo" 
-              className="h-8 w-auto"
-            />
-            <span className="text-xl font-semibold text-gray-900 dark:text-white">QEB Elite</span>
+            <img src={logoImage} alt="QEB Elite Logo" className="h-8 w-auto" />
+            <span className="text-xl font-semibold text-gray-900 dark:text-white">
+              QEB Elite
+            </span>
           </div>
         </div>
-        
+
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           {menuGroups.map((group, groupIndex) => (
-            <div key={groupIndex} className={groupIndex > 0 ? 'mt-6' : ''}>
+            <div key={groupIndex} className={groupIndex > 0 ? "mt-6" : ""}>
               {group.label && (
                 <h3 className="px-3 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   {group.label}
@@ -96,16 +103,16 @@ export function AppSidebar() {
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive = location === item.url;
-                  
+
                   return (
                     <li key={item.title}>
                       <Link
                         href={item.url}
-                        data-testid={`link-nav-${item.title.toLowerCase().replace(' ', '-')}`}
+                        data-testid={`link-nav-${item.title.toLowerCase().replace(" ", "-")}`}
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                           isActive
-                            ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                            ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+                            : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                         }`}
                       >
                         <Icon className="h-5 w-5 flex-shrink-0" />
@@ -118,7 +125,6 @@ export function AppSidebar() {
             </div>
           ))}
         </nav>
-        
       </div>
     </aside>
   );

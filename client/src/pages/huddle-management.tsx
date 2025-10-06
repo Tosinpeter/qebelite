@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar as CalendarIcon, Clock, Users } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -14,61 +15,149 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
-type Huddle = {
-  id: string;
-  title: string;
-  description: string;
-  scheduledAt: Date;
-  duration: number;
-  status: string;
-};
+import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
+import { huddleQueries } from "@/lib/supabase-queries";
+import type { Huddle, InsertHuddle } from "@shared/schema";
 
 export default function HuddleManagement() {
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingHuddle, setEditingHuddle] = useState<Huddle | null>(null);
   const [nextHuddle, setNextHuddle] = useState<Huddle | null>(null);
   const [countdown, setCountdown] = useState("");
+  
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    scheduledAt: "",
+    duration: 30,
+    status: "upcoming"
+  });
 
-  const mockHuddles: Huddle[] = [
-    {
-      id: "1",
-      title: "Team Standup",
-      description: "Daily team sync and progress updates",
-      scheduledAt: new Date(Date.now() + 3 * 60 * 60 * 1000),
+  const { data: huddles = [], isLoading } = useQuery({
+    queryKey: ['/api/huddles'],
+    queryFn: () => huddleQueries.getAll(),
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (huddle: InsertHuddle) => huddleQueries.create(huddle),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/huddles'] });
+      toast({ title: "Success", description: "Huddle scheduled successfully" });
+      setIsDialogOpen(false);
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to schedule huddle",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<Huddle> }) => 
+      huddleQueries.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/huddles'] });
+      toast({ title: "Success", description: "Huddle updated successfully" });
+      setIsDialogOpen(false);
+      setEditingHuddle(null);
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to update huddle",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => huddleQueries.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/huddles'] });
+      toast({ title: "Success", description: "Huddle deleted successfully" });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to delete huddle",
+        variant: "destructive" 
+      });
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      title: "",
+      description: "",
+      scheduledAt: "",
       duration: 30,
       status: "upcoming"
-    },
-    {
-      id: "2",
-      title: "Weekly Planning",
-      description: "Plan next week's training schedule",
-      scheduledAt: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-      duration: 60,
-      status: "upcoming"
-    },
-    {
-      id: "3",
-      title: "Nutrition Workshop",
-      description: "Monthly nutrition education session",
-      scheduledAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-      duration: 90,
-      status: "upcoming"
-    },
-  ];
+    });
+  };
+
+  const handleOpenDialog = (huddle?: Huddle) => {
+    if (huddle) {
+      setEditingHuddle(huddle);
+      setFormData({
+        title: huddle.title,
+        description: huddle.description || "",
+        scheduledAt: new Date(huddle.scheduledAt).toISOString().slice(0, 16),
+        duration: huddle.duration,
+        status: huddle.status
+      });
+    } else {
+      setEditingHuddle(null);
+      resetForm();
+    }
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!formData.title || !formData.scheduledAt) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const huddleData = {
+      title: formData.title,
+      description: formData.description,
+      scheduledAt: new Date(formData.scheduledAt),
+      duration: formData.duration,
+      status: formData.status
+    };
+
+    if (editingHuddle) {
+      updateMutation.mutate({ id: editingHuddle.id, data: huddleData });
+    } else {
+      createMutation.mutate(huddleData);
+    }
+  };
 
   useEffect(() => {
-    const upcoming = mockHuddles
+    if (!huddles.length) return;
+    
+    const upcoming = huddles
       .filter(h => h.status === "upcoming")
-      .sort((a, b) => a.scheduledAt.getTime() - b.scheduledAt.getTime())[0];
+      .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
     setNextHuddle(upcoming);
-  }, []);
+  }, [huddles]);
 
   useEffect(() => {
     if (!nextHuddle) return;
 
     const timer = setInterval(() => {
       const now = new Date();
-      const diff = nextHuddle.scheduledAt.getTime() - now.getTime();
+      const diff = new Date(nextHuddle.scheduledAt).getTime() - now.getTime();
 
       if (diff <= 0) {
         setCountdown("Starting now!");
@@ -95,7 +184,7 @@ export default function HuddleManagement() {
             Schedule and manage team meetings
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} data-testid="button-create-huddle">
+        <Button onClick={() => handleOpenDialog()} data-testid="button-create-huddle">
           <Plus className="h-4 w-4 mr-2" />
           Schedule Huddle
         </Button>
@@ -121,7 +210,7 @@ export default function HuddleManagement() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <CalendarIcon className="h-4 w-4" />
-                  {nextHuddle.scheduledAt.toLocaleString('en-US', {
+                  {new Date(nextHuddle.scheduledAt).toLocaleString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     hour: '2-digit',
@@ -143,83 +232,142 @@ export default function HuddleManagement() {
           <CardTitle className="text-lg">Upcoming Huddles</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {mockHuddles.map((huddle) => (
-              <div
-                key={huddle.id}
-                className="p-4 rounded-md border hover-elevate"
-                data-testid={`huddle-item-${huddle.id}`}
-              >
-                <div className="flex justify-between items-start gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="font-medium">{huddle.title}</div>
-                      <Badge variant="outline">{huddle.status}</Badge>
+          {isLoading ? (
+            <div className="text-center py-8 text-muted-foreground">Loading huddles...</div>
+          ) : huddles.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">No huddles scheduled yet</div>
+          ) : (
+            <div className="space-y-3">
+              {huddles.map((huddle) => (
+                <div
+                  key={huddle.id}
+                  className="p-4 rounded-md border hover-elevate"
+                  data-testid={`huddle-item-${huddle.id}`}
+                >
+                  <div className="flex justify-between items-start gap-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="font-medium">{huddle.title}</div>
+                        <Badge variant="outline">{huddle.status}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {huddle.description}
+                      </p>
+                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <CalendarIcon className="h-3 w-3" />
+                          {new Date(huddle.scheduledAt).toLocaleString('en-US', {
+                            weekday: 'short',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          {huddle.duration} min
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {huddle.description}
-                    </p>
-                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <CalendarIcon className="h-3 w-3" />
-                        {huddle.scheduledAt.toLocaleString('en-US', {
-                          weekday: 'short',
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {huddle.duration} min
-                      </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={() => handleOpenDialog(huddle)}
+                        data-testid={`button-edit-huddle-${huddle.id}`}
+                      >
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => deleteMutation.mutate(huddle.id)}
+                        disabled={deleteMutation.isPending}
+                        data-testid={`button-delete-huddle-${huddle.id}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm" data-testid={`button-edit-huddle-${huddle.id}`}>
-                    Edit
-                  </Button>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent data-testid="dialog-huddle-form">
           <DialogHeader>
-            <DialogTitle>Schedule New Huddle</DialogTitle>
+            <DialogTitle>{editingHuddle ? "Edit Huddle" : "Schedule New Huddle"}</DialogTitle>
             <DialogDescription>
-              Create a new team meeting
+              {editingHuddle ? "Update huddle details" : "Create a new team meeting"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
-              <Input id="title" placeholder="Team Standup" data-testid="input-huddle-title" />
+              <Label htmlFor="title">Title *</Label>
+              <Input 
+                id="title" 
+                placeholder="Team Standup" 
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                data-testid="input-huddle-title" 
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea id="description" placeholder="What will this huddle be about?" data-testid="input-huddle-description" />
+              <Textarea 
+                id="description" 
+                placeholder="What will this huddle be about?" 
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                data-testid="input-huddle-description" 
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="date">Date & Time</Label>
-                <Input id="date" type="datetime-local" data-testid="input-huddle-datetime" />
+                <Label htmlFor="date">Date & Time *</Label>
+                <Input 
+                  id="date" 
+                  type="datetime-local" 
+                  value={formData.scheduledAt}
+                  onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
+                  data-testid="input-huddle-datetime" 
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="duration">Duration (minutes)</Label>
-                <Input id="duration" type="number" placeholder="30" data-testid="input-huddle-duration" />
+                <Label htmlFor="duration">Duration (minutes) *</Label>
+                <Input 
+                  id="duration" 
+                  type="number" 
+                  placeholder="30" 
+                  value={formData.duration}
+                  onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
+                  data-testid="input-huddle-duration" 
+                />
               </div>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsDialogOpen(false);
+                setEditingHuddle(null);
+                resetForm();
+              }} 
+              data-testid="button-cancel"
+            >
               Cancel
             </Button>
-            <Button onClick={() => setIsDialogOpen(false)} data-testid="button-save-huddle">
-              Schedule Huddle
+            <Button 
+              onClick={handleSubmit}
+              disabled={createMutation.isPending || updateMutation.isPending}
+              data-testid="button-save-huddle"
+            >
+              {createMutation.isPending || updateMutation.isPending ? "Saving..." : (editingHuddle ? "Update" : "Schedule")}
             </Button>
           </DialogFooter>
         </DialogContent>
