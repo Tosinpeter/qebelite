@@ -13,6 +13,7 @@ export const users = pgTable("user_profiles", {
   avatarUrl: text("avatar_url"),
   displayName: varchar("display_name", { length: 255 }),
   recipePreference: varchar("recipe_preference", { length: 100 }),
+  banned: boolean("banned").default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`NOW()`),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(sql`NOW()`),
 });
@@ -69,6 +70,7 @@ export const homeWidget = pgTable("home_widget", {
   title: text("title").notNull(),
   subtitle: text("subtitle"),
   redirectUrl: text("redirect_url").notNull(),
+  ctaText: text("cta_text"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`NOW()`),
 });
 
@@ -132,6 +134,7 @@ export const coachingAvailability = pgTable("coaching_availability", {
 export const coachingSessions = pgTable("coaching_sessions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   createdAt: timestamp("created_at", { withTimezone: true }).default(sql`NOW()`),
+  userId: varchar("user_id"),
   clientName: text("client_name").notNull(),
   clientEmail: text("client_email").notNull(),
   clientPhone: text("client_phone"),
@@ -140,6 +143,17 @@ export const coachingSessions = pgTable("coaching_sessions", {
   endTime: text("end_time").notNull(),
   status: text("status").notNull().default("pending"),
   notes: text("notes"),
+});
+
+export const notifications = pgTable("notifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull(),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  type: text("type").notNull().default("general"),
+  data: text("data"),
+  read: boolean("read").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(sql`NOW()`),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
@@ -160,6 +174,8 @@ export const insertNutritionVideoSchema = createInsertSchema(nutritionVideos).om
 export const insertAthleteResourceSchema = createInsertSchema(athleteResources).omit({ id: true, createdAt: true });
 export const insertCoachingAvailabilitySchema = createInsertSchema(coachingAvailability).omit({ id: true });
 export const insertCoachingSessionSchema = createInsertSchema(coachingSessions).omit({ id: true, createdAt: true });
+export const insertNotificationSchema = createInsertSchema(notifications).omit({ id: true, createdAt: true });
+export const updateNotificationSchema = insertNotificationSchema.partial();
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -189,3 +205,5 @@ export type CoachingAvailability = typeof coachingAvailability.$inferSelect;
 export type InsertCoachingAvailability = z.infer<typeof insertCoachingAvailabilitySchema>;
 export type CoachingSession = typeof coachingSessions.$inferSelect;
 export type InsertCoachingSession = z.infer<typeof insertCoachingSessionSchema>;
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;

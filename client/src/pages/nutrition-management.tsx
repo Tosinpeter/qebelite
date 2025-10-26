@@ -40,6 +40,34 @@ import { queryClient } from "@/lib/queryClient";
 import type { Recipe, NutritionVideo } from "@shared/schema";
 import { Play, Video } from "lucide-react";
 
+// Helper function to extract YouTube video ID from various URL formats
+function getYouTubeVideoId(url: string): string | null {
+  if (!url) return null;
+  
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
+    /^([a-zA-Z0-9_-]{11})$/, // Direct video ID
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return null;
+}
+
+// Helper function to get YouTube thumbnail URL
+function getYouTubeThumbnail(videoUrl: string): string | null {
+  const videoId = getYouTubeVideoId(videoUrl);
+  if (!videoId) return null;
+  
+  // Use maxresdefault for highest quality, fallback to hqdefault
+  return `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+}
+
 export default function NutritionManagement() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isVideoDialogOpen, setIsVideoDialogOpen] = useState(false);
@@ -666,15 +694,28 @@ export default function NutritionManagement() {
             </div>
           ) : (videos && videos.length > 0) ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {videos.map((video) => (
+              {videos.map((video) => {
+                const youtubeThumbnail = getYouTubeThumbnail(video.videoUrl);
+                const thumbnailUrl = youtubeThumbnail || video.thumbnail;
+                
+                return (
                 <Card key={video.id} className="hover-elevate overflow-hidden" data-testid={`video-item-${video.id}`}>
                   <CardHeader className="p-0">
                     <div className="aspect-video relative overflow-hidden bg-muted">
-                      {video.thumbnail ? (
+                      {thumbnailUrl ? (
                         <img 
-                          src={video.thumbnail} 
+                          src={thumbnailUrl} 
                           alt={video.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // If YouTube thumbnail fails, try to use the stored thumbnail or show fallback
+                            if (e.currentTarget.src !== video.thumbnail && video.thumbnail) {
+                              e.currentTarget.src = video.thumbnail;
+                            } else {
+                              // Hide the image and show fallback
+                              e.currentTarget.style.display = 'none';
+                            }
+                          }}
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center bg-muted">
@@ -729,7 +770,8 @@ export default function NutritionManagement() {
                     </div>
                   </CardContent>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-12">

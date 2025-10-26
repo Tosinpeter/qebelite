@@ -16,8 +16,13 @@ const menuGroups = [
     label: null,
     items: [
       {
-        title: "Dashboard",
+        title: "Home",
         url: "/",
+        icon: Home,
+      },
+      {
+        title: "Dashboard",
+        url: "/admin",
         icon: LayoutDashboard,
       },
     ],
@@ -68,7 +73,7 @@ const menuGroups = [
       {
         title: "Home Layout",
         url: "/home-settings",
-        icon: Home,
+        icon: LayoutDashboard,
       },
     ],
   },

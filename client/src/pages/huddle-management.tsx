@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Calendar as CalendarIcon, Clock, Trash2, Upload, Link as LinkIcon } from "lucide-react";
+import { Plus, Calendar as CalendarIcon, Clock, Trash2, Upload, Link as LinkIcon, ImageIcon, CheckCircle2, X } from "lucide-react";
+import { useDropzone } from "react-dropzone";
 import {
   Dialog,
   DialogContent,
@@ -127,8 +128,7 @@ export default function HuddleManagement() {
     setIsDialogOpen(true);
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleImageUpload = async (file: File) => {
     if (!file) return;
 
     if (file.size > 5 * 1024 * 1024) {
@@ -179,6 +179,21 @@ export default function HuddleManagement() {
       setUploadingImage(false);
     }
   };
+
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    if (acceptedFiles.length > 0) {
+      handleImageUpload(acceptedFiles[0]);
+    }
+  }, [formData]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: {
+      'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+    },
+    maxFiles: 1,
+    disabled: uploadingImage
+  });
 
   const handleImageUrlChange = (url: string) => {
     setFormData({ ...formData, image: url });
@@ -453,16 +468,70 @@ export default function HuddleManagement() {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="upload" className="space-y-2">
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    disabled={uploadingImage}
-                    data-testid="input-image-upload"
-                  />
-                  {uploadingImage && (
-                    <p className="text-sm text-muted-foreground">Uploading image...</p>
-                  )}
+                  <div
+                    {...getRootProps()}
+                    className={`
+                      relative border-2 border-dashed rounded-lg overflow-hidden transition-all h-48
+                      ${isDragActive ? 'border-primary bg-primary/5' : 'border-gray-300 dark:border-gray-600'}
+                      ${uploadingImage ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5 cursor-pointer'}
+                    `}
+                    data-testid="dropzone-upload"
+                  >
+                    <input {...getInputProps()} data-testid="input-image-upload" />
+                    
+                    {imagePreview && !uploadingImage ? (
+                      // Image Preview Inside Dropzone
+                      <div className="relative group h-full">
+                        <img 
+                          src={imagePreview} 
+                          alt="Huddle preview" 
+                          className="w-full h-full object-cover"
+                          data-testid="img-preview"
+                        />
+                        {/* Overlay on hover */}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3">
+                          <CheckCircle2 className="h-12 w-12 text-green-400" />
+                          <p className="text-white text-sm font-medium">Image uploaded</p>
+                          <p className="text-gray-300 text-xs">Click or drag to replace</p>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setFormData({ ...formData, image: '' });
+                              setImagePreview('');
+                            }}
+                            data-testid="button-remove-image"
+                            className="mt-2"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove Image
+                          </Button>
+                        </div>
+                      </div>
+                    ) : uploadingImage ? (
+                      // Upload Progress
+                      <div className="flex flex-col items-center justify-center h-full gap-2">
+                        <Upload className="h-10 w-10 text-primary animate-pulse" />
+                        <p className="text-sm font-medium text-muted-foreground">Uploading image...</p>
+                      </div>
+                    ) : (
+                      // Empty State
+                      <div className="flex flex-col items-center justify-center h-full gap-2 p-8">
+                        <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                        {isDragActive ? (
+                          <p className="text-sm font-medium text-primary">Drop the image here</p>
+                        ) : (
+                          <>
+                            <p className="text-sm font-medium">Drag & drop an image here</p>
+                            <p className="text-xs text-muted-foreground">or click to browse</p>
+                            <p className="text-xs text-muted-foreground mt-2">Max file size: 5MB</p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </TabsContent>
                 <TabsContent value="url" className="space-y-2">
                   <Input
@@ -471,18 +540,18 @@ export default function HuddleManagement() {
                     onChange={(e) => handleImageUrlChange(e.target.value)}
                     data-testid="input-image-url"
                   />
+                  {imagePreview && (
+                    <div className="mt-2">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-48 object-cover rounded-md border"
+                        data-testid="img-url-preview"
+                      />
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
-              {imagePreview && (
-                <div className="mt-2">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-48 object-cover rounded-md"
-                    data-testid="img-preview"
-                  />
-                </div>
-              )}
             </div>
           </div>
           <DialogFooter>

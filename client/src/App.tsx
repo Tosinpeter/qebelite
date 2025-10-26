@@ -19,6 +19,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Bell, Search, Menu, LogOut, User } from "lucide-react";
 import NotFound from "@/pages/not-found";
+import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import UserManagement from "@/pages/user-management";
 import HuddleManagement from "@/pages/huddle-management";
@@ -30,6 +31,10 @@ import ScheduleCoaching from "@/pages/schedule-coaching";
 import Profile from "@/pages/profile";
 import SignIn from "@/pages/sign-in";
 import SignUp from "@/pages/sign-up";
+import PrivacyPolicy from "@/pages/privacy-policy";
+import AboutUs from "@/pages/about-us";
+import TermsOfService from "@/pages/terms-of-service";
+import ContactUs from "@/pages/contact-us";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useLocation } from "wouter";
@@ -39,7 +44,8 @@ import { coachingSessionQueries, userQueries } from "@/lib/supabase-queries";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/" component={Landing} />
+      <Route path="/admin" component={Dashboard} />
       <Route path="/users" component={UserManagement} />
       <Route path="/huddles" component={HuddleManagement} />
       <Route path="/nutrition" component={NutritionManagement} />
@@ -220,6 +226,29 @@ export default function App() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Show public pages without auth
+  const publicPages = ["/", "/privacy-policy", "/about-us", "/terms-of-service", "/contact-us"];
+  if (publicPages.includes(location)) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          {location === "/privacy-policy" ? (
+            <PrivacyPolicy />
+          ) : location === "/about-us" ? (
+            <AboutUs />
+          ) : location === "/terms-of-service" ? (
+            <TermsOfService />
+          ) : location === "/contact-us" ? (
+            <ContactUs />
+          ) : (
+            <Landing />
+          )}
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    );
+  }
 
   if (isLoading) {
     return (

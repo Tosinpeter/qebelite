@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Upload, X } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Upload, X, Eye, EyeOff, Ban } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
@@ -29,6 +29,7 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     displayName: "",
@@ -41,15 +42,22 @@ export default function UserManagement() {
 
   const { toast } = useToast();
 
-  const { data: users = [], isLoading } = useQuery<User[]>({
-    queryKey: ['users'],
+  const { data: users = [], isLoading, error } = useQuery<User[]>({
+    queryKey: ['profiles'],
     queryFn: userQueries.getAll,
+    staleTime: 0, // Always refetch
+    gcTime: 0, // Don't cache
+    retry: 3, // Retry failed requests
   });
+
+  // Debug logging
+  console.log('📊 Users loaded:', Array.isArray(users) ? users.length : 0, 'users');
+  if (error) console.error('❌ Error:', error);
 
   const createMutation = useMutation({
     mutationFn: (data: Partial<User>) => userQueries.create(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast({ title: "User created successfully" });
       setIsDialogOpen(false);
     },
@@ -62,7 +70,7 @@ export default function UserManagement() {
     mutationFn: ({ id, data }: { id: string; data: Partial<User> }) => 
       userQueries.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast({ title: "User updated successfully" });
       setIsDialogOpen(false);
     },
@@ -74,7 +82,7 @@ export default function UserManagement() {
   const deleteMutation = useMutation({
     mutationFn: (id: string) => userQueries.delete(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
       toast({ title: "User deleted successfully" });
     },
     onError: (error: any) => {
@@ -82,10 +90,30 @@ export default function UserManagement() {
     },
   });
 
-  const filteredUsers = users.filter(user =>
-    (user.displayName?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (user.id.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const banMutation = useMutation({
+    mutationFn: async ({ id, banned }: { id: string; banned: boolean }) => {
+      // TODO: Add banned column to profiles table first
+      // For now, we'll just show a message that this feature is not yet implemented
+      throw new Error("Ban functionality requires database schema update. Please add 'banned' column to profiles table.");
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      toast({ 
+        title: variables.banned ? "User banned successfully" : "User unbanned successfully" 
+      });
+    },
+    onError: (error: any) => {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const filteredUsers = users.filter((user: User) => {
+    const matchesDisplayName = user.displayName?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesId = user.id.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesEmail = user.email?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return matchesDisplayName || matchesId || matchesEmail;
+  });
 
   const handleCreate = () => {
     setEditingUser(null);
@@ -118,6 +146,13 @@ export default function UserManagement() {
   const handleDelete = (user: User) => {
     if (confirm(`Are you sure you want to delete ${user.displayName || user.id}?`)) {
       deleteMutation.mutate(user.id);
+    }
+  };
+
+  const handleBan = (user: User) => {
+    const action = user.banned ? 'unban' : 'ban';
+    if (confirm(`Are you sure you want to ${action} ${user.displayName || user.id}?`)) {
+      banMutation.mutate({ id: user.id, banned: !user.banned });
     }
   };
 
@@ -332,7 +367,7 @@ export default function UserManagement() {
                 </tr>
               </thead>
               <tbody>
-                {filteredUsers.map((user) => (
+                {filteredUsers.map((user: User) => (
                   <tr
                     key={user.id}
                     className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700"
@@ -375,6 +410,16 @@ export default function UserManagement() {
                           className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                         >
                           <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleBan(user)}
+                          data-testid={`button-ban-${user.id}`}
+                          className={`${user.banned ? 'text-green-600 hover:text-green-700 hover:bg-green-50' : 'text-orange-600 hover:text-orange-700 hover:bg-orange-50'}`}
+                          title={user.banned ? 'Unban user' : 'Ban user'}
+                        >
+                          <Ban className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -500,14 +545,29 @@ export default function UserManagement() {
             {!editingUser && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password"
-                  placeholder="Enter password" 
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  data-testid="input-user-password" 
-                />
+                <div className="relative">
+                  <Input 
+                    id="password" 
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter password" 
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    data-testid="input-user-password"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    data-testid="toggle-password-visibility"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             )}
           </div>

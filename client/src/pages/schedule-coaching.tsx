@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { format, parseISO } from "date-fns";
-import { Calendar as CalendarIcon, Clock, Mail, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Mail, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
-import { coachingSessionQueries, coachingAvailabilityQueries } from "@/lib/supabase-queries";
+import { coachingSessionQueries, coachingAvailabilityQueries, notificationQueries } from "@/lib/supabase-queries";
 
 const DAYS_OF_WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -75,6 +75,42 @@ export default function ScheduleCoachingPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/coaching-sessions'] });
       toast({ title: "Session Cancelled", description: "Coaching session has been cancelled." });
+    },
+  });
+
+  const confirmSessionMutation = useMutation({
+    mutationFn: async ({ id, userId, clientName, sessionDate, startTime }: any) => {
+      // Update session status to confirmed
+      await coachingSessionQueries.update(id, { status: "confirmed" });
+      
+      // Send notification to user if userId exists
+      if (userId) {
+        await notificationQueries.create({
+          userId: userId,
+          title: "Booking Confirmed",
+          body: `Your coaching session on ${format(parseISO(sessionDate), 'MMM d, yyyy')} at ${startTime} has been confirmed by the coach. See you then!`,
+          type: "booking",
+          data: JSON.stringify({
+            sessionId: id,
+            type: "coaching_confirmed",
+            screen: "CoachingScreen"
+          })
+        });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/coaching-sessions'] });
+      toast({ 
+        title: "Session Confirmed", 
+        description: "Coaching session has been confirmed and user notified." 
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Error", 
+        description: error.message || "Failed to confirm session",
+        variant: "destructive" 
+      });
     },
   });
 
@@ -265,16 +301,43 @@ export default function ScheduleCoachingPage() {
                           {session.clientEmail}
                         </div>
                         <div className="flex items-center justify-between">
-                          <Badge variant="secondary" className="text-xs">{session.status}</Badge>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteSessionMutation.mutate(session.id)}
-                            disabled={deleteSessionMutation.isPending}
-                            data-testid={`button-cancel-${session.id}`}
+                          <Badge 
+                            variant={session.status === 'confirmed' ? 'default' : 'secondary'} 
+                            className="text-xs"
                           >
-                            Cancel
-                          </Button>
+                            {session.status}
+                          </Badge>
+                          <div className="flex gap-2">
+                            {session.status === 'pending' && (
+                              <Button
+                                variant="default"
+                                size="sm"
+                                onClick={() => confirmSessionMutation.mutate({
+                                  id: session.id,
+                                  userId: session.userId,
+                                  clientName: session.clientName,
+                                  sessionDate: session.sessionDate,
+                                  startTime: session.startTime
+                                })}
+                                disabled={confirmSessionMutation.isPending}
+                                data-testid={`button-confirm-${session.id}`}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <Check className="h-4 w-4 mr-1" />
+                                Confirm
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => deleteSessionMutation.mutate(session.id)}
+                              disabled={deleteSessionMutation.isPending}
+                              data-testid={`button-cancel-${session.id}`}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}

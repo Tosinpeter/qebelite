@@ -13,19 +13,21 @@ import type {
   NutritionVideo,
   AthleteResource,
   CoachingAvailability,
-  CoachingSession
+  CoachingSession,
+  Notification
 } from '@shared/schema';
 
 const mapUserFromDb = (dbUser: any): User => ({
   id: dbUser.id,
-  email: dbUser.email,
-  role: dbUser.role,
-  age: dbUser.age,
-  height: dbUser.height,
-  weight: dbUser.weight,
-  avatarUrl: dbUser.avatar_url,
-  displayName: dbUser.display_name,
-  recipePreference: dbUser.recipe_preference,
+  email: dbUser.email || null,
+  role: dbUser.role || 'user',
+  age: dbUser.age || null,
+  height: dbUser.height || null,
+  weight: dbUser.weight || null,
+  avatarUrl: dbUser.avatar_url || null,
+  displayName: dbUser.display_name || null,
+  recipePreference: dbUser.recipe_preference || null,
+  banned: false, // Default to false since column doesn't exist yet
   createdAt: dbUser.created_at,
   updatedAt: dbUser.updated_at,
 });
@@ -41,23 +43,36 @@ const mapUserToDb = (user: Partial<User>): any => {
   if (user.avatarUrl !== undefined) dbUser.avatar_url = user.avatarUrl;
   if (user.displayName !== undefined) dbUser.display_name = user.displayName;
   if (user.recipePreference !== undefined) dbUser.recipe_preference = user.recipePreference;
+  // Note: banned field not included since column doesn't exist in profiles table yet
   return dbUser;
 };
 
 export const userQueries = {
   getAll: async () => {
+    const timestamp = new Date().toISOString();
+    console.log(`🔍 [${timestamp}] Fetching users from profiles table...`);
+    
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
     
-    if (error) throw error;
-    return data.map(mapUserFromDb);
+    console.log(`📊 [${timestamp}] Found`, data?.length || 0, 'users in database');
+    
+    if (error) {
+      console.error(`❌ [${timestamp}] Supabase error:`, error);
+      throw error;
+    }
+    
+    const mappedUsers = data.map(mapUserFromDb);
+    console.log(`✅ [${timestamp}] Returning`, mappedUsers.length, 'users');
+    
+    return mappedUsers;
   },
 
   getById: async (id: string) => {
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .select('*')
       .eq('id', id)
       .single();
@@ -70,7 +85,7 @@ export const userQueries = {
     const dbUser = mapUserToDb(user);
     // Use upsert to handle cases where auth trigger already created profile
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .upsert(dbUser, { onConflict: 'id' })
       .select()
       .single();
@@ -82,7 +97,7 @@ export const userQueries = {
   update: async (id: string, updates: Partial<User>) => {
     const dbUpdates = mapUserToDb(updates);
     const { data, error } = await supabase
-      .from('user_profiles')
+      .from('profiles')
       .update(dbUpdates)
       .eq('id', id)
       .select()
@@ -369,6 +384,7 @@ const mapHomeWidgetItemFromDb = (dbWidget: any): HomeWidgetItem => ({
   title: dbWidget.title,
   subtitle: dbWidget.subtitle,
   redirectUrl: dbWidget.redirect_url,
+  ctaText: dbWidget.cta_text,
   createdAt: dbWidget.created_at,
 });
 
@@ -380,6 +396,7 @@ const mapHomeWidgetItemToDb = (widget: Partial<HomeWidgetItem>): any => {
   if (widget.title !== undefined) dbWidget.title = widget.title;
   if (widget.subtitle !== undefined) dbWidget.subtitle = widget.subtitle;
   if (widget.redirectUrl !== undefined) dbWidget.redirect_url = widget.redirectUrl;
+  if (widget.ctaText !== undefined) dbWidget.cta_text = widget.ctaText;
   if (widget.createdAt !== undefined) dbWidget.created_at = widget.createdAt;
   return dbWidget;
 };
@@ -980,6 +997,7 @@ export const coachingAvailabilityQueries = {
 const mapCoachingSessionFromDb = (dbSession: any): CoachingSession => ({
   id: dbSession.id,
   createdAt: dbSession.created_at,
+  userId: dbSession.user_id,
   clientName: dbSession.client_name,
   clientEmail: dbSession.client_email,
   clientPhone: dbSession.client_phone,
@@ -992,6 +1010,7 @@ const mapCoachingSessionFromDb = (dbSession: any): CoachingSession => ({
 
 const mapCoachingSessionToDb = (session: Partial<CoachingSession>): any => {
   const dbSession: any = {};
+  if (session.userId !== undefined) dbSession.user_id = session.userId;
   if (session.clientName !== undefined) dbSession.client_name = session.clientName;
   if (session.clientEmail !== undefined) dbSession.client_email = session.clientEmail;
   if (session.clientPhone !== undefined) dbSession.client_phone = session.clientPhone;
@@ -1102,4 +1121,94 @@ export const storageHelpers = {
     
     if (error) throw error;
   }
+};
+
+const mapNotificationFromDb = (dbNotification: any): Notification => ({
+  id: dbNotification.id,
+  userId: dbNotification.user_id,
+  title: dbNotification.title,
+  body: dbNotification.body,
+  type: dbNotification.type,
+  data: dbNotification.data,
+  read: dbNotification.read,
+  createdAt: dbNotification.created_at,
+});
+
+const mapNotificationToDb = (notification: Partial<Notification>): any => {
+  const dbNotification: any = {};
+  if (notification.userId !== undefined) dbNotification.user_id = notification.userId;
+  if (notification.title !== undefined) dbNotification.title = notification.title;
+  if (notification.body !== undefined) dbNotification.body = notification.body;
+  if (notification.type !== undefined) dbNotification.type = notification.type;
+  if (notification.data !== undefined) dbNotification.data = notification.data;
+  if (notification.read !== undefined) dbNotification.read = notification.read;
+  return dbNotification;
+};
+
+export const notificationQueries = {
+  getAll: async () => {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data.map(mapNotificationFromDb);
+  },
+
+  getByUserId: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data.map(mapNotificationFromDb);
+  },
+
+  getUnreadByUserId: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('read', false)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data.map(mapNotificationFromDb);
+  },
+
+  create: async (notification: Partial<Notification>) => {
+    const dbNotification = mapNotificationToDb(notification);
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert(dbNotification)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapNotificationFromDb(data);
+  },
+
+  markAsRead: async (id: string) => {
+    const { data, error } = await supabase
+      .from('notifications')
+      .update({ read: true })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return mapNotificationFromDb(data);
+  },
+
+  delete: async (id: string) => {
+    const { error } = await supabase
+      .from('notifications')
+      .delete()
+      .eq('id', id);
+    
+    if (error) throw error;
+  },
 };
