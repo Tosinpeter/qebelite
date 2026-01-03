@@ -796,7 +796,7 @@ export default function NutritionManagement() {
               <div className="space-y-2">
                 <Label htmlFor="type">Type</Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData(prev => ({ ...prev, type: value }))}>
-                  <SelectTrigger data-testid="select-recipe-type">
+                  <SelectTrigger className="h-11" data-testid="select-recipe-type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -843,8 +843,8 @@ export default function NutritionManagement() {
               <Label>Recipe Image</Label>
               
               {imagePreview ? (
-                <div className="relative">
-                  <div className="aspect-video w-full rounded-md overflow-hidden border bg-muted">
+                <div className="relative w-32">
+                  <div className="aspect-square w-full rounded-md overflow-hidden border bg-muted">
                     <img 
                       src={imagePreview} 
                       alt="Preview" 
@@ -858,7 +858,7 @@ export default function NutritionManagement() {
                     type="button"
                     size="sm"
                     variant="destructive"
-                    className="absolute top-2 right-2"
+                    className="absolute -top-2 -right-2"
                     onClick={handleRemoveImage}
                     data-testid="button-remove-image"
                   >
@@ -867,22 +867,23 @@ export default function NutritionManagement() {
                   </Button>
                 </div>
               ) : (
-                <div className="border-2 border-dashed rounded-md p-6 text-center">
-                  <ImageIcon className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground mb-3">Upload an image or paste a URL</p>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => document.getElementById('image-file-input')?.click()}
-                      data-testid="button-upload-image"
-                    >
-                      <Upload className="h-3 w-3 mr-1" />
-                      Upload
-                    </Button>
-                  </div>
+                <div className="w-32 aspect-square border-2 border-dashed rounded-md p-3 flex flex-col items-center justify-center cursor-pointer hover:border-primary/50 transition-colors" onClick={() => document.getElementById('image-file-input')?.click()}>
+                  <ImageIcon className="h-8 w-8 mb-2 text-muted-foreground" />
+                  <p className="text-xs text-muted-foreground text-center mb-2">Upload</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="w-full text-xs h-7"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      document.getElementById('image-file-input')?.click();
+                    }}
+                    data-testid="button-upload-image"
+                  >
+                    <Upload className="h-3 w-3 mr-1" />
+                    Browse
+                  </Button>
                   <input
                     id="image-file-input"
                     type="file"
@@ -893,22 +894,6 @@ export default function NutritionManagement() {
                   />
                 </div>
               )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="image" className="text-xs text-muted-foreground">Or paste image URL</Label>
-                <Input 
-                  id="image" 
-                  placeholder="https://..." 
-                  value={formData.image}
-                  onChange={(e) => {
-                    setFormData(prev => ({ ...prev, image: e.target.value }));
-                    if (e.target.value) {
-                      setImagePreview(e.target.value);
-                    }
-                  }}
-                  data-testid="input-recipe-image" 
-                />
-              </div>
             </div>
 
             <div className="space-y-2">

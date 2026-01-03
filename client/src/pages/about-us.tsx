@@ -75,7 +75,7 @@ export default function AboutUs() {
   ];
 
   const milestones = [
-    { year: "2020", event: "QEB Elite Founded", description: "Started with a vision to revolutionize elite fitness training" },
+    { year: "2020", event: "QB Elite Founded", description: "Started with a vision to revolutionize elite fitness training" },
     { year: "2021", event: "1,000 Users", description: "Reached our first thousand active users" },
     { year: "2022", event: "Coach Network Launch", description: "Connected users with certified elite coaches" },
     { year: "2023", event: "10,000 Users", description: "Expanded to 10K users across 20 countries" },
@@ -97,9 +97,9 @@ export default function AboutUs() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation('/')}>
-              <img src={logoImage} alt="QEB Elite Logo" className="h-8 w-auto" />
+              <img src={logoImage} alt="QB Elite Logo" className="h-8 w-auto" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                QEB Elite
+                QB Elite
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -129,7 +129,7 @@ export default function AboutUs() {
             Our Story
           </Badge>
           <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 dark:text-white mb-6">
-            About QEB Elite
+            About QB Elite
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto leading-relaxed">
             We're on a mission to empower elite athletes and fitness enthusiasts worldwide to achieve their goals through 
@@ -197,7 +197,7 @@ export default function AboutUs() {
               What We Stand For
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-              These core values guide everything we do at QEB Elite
+              These core values guide everything we do at QB Elite
             </p>
           </div>
 
@@ -230,7 +230,7 @@ export default function AboutUs() {
               Meet the Team
             </Badge>
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
-              The People Behind QEB Elite
+              The People Behind QB Elite
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
               Our diverse team brings together expertise in fitness, technology, and community building
@@ -306,7 +306,7 @@ export default function AboutUs() {
                 Join Our Elite Community
               </h2>
               <p className="text-xl mb-8 text-white/90 max-w-2xl mx-auto">
-                Be part of an elite movement that's transforming lives through fitness. Download QEB Elite today 
+                Be part of an elite movement that's transforming lives through fitness. Download QB Elite today 
                 and start your journey to a healthier, stronger you.
               </p>
               <Button 
@@ -326,7 +326,7 @@ export default function AboutUs() {
       <footer className="border-t border-gray-200 dark:border-gray-800 py-8 bg-white/50 dark:bg-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            © 2025 QEB Elite. All rights reserved.
+            © 2025 QB Elite. All rights reserved.
           </p>
         </div>
       </footer>

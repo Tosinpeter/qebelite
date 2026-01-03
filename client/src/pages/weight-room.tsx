@@ -201,19 +201,41 @@ export default function WeightRoom() {
     }, 100);
 
     try {
-      const fileName = `weight-room-${Date.now()}-${file.name}`;
-      await storageHelpers.uploadFile('user-avatars', fileName, file);
-      const publicUrl = storageHelpers.getPublicUrl('user-avatars', fileName);
+      // Sanitize filename: remove spaces, special chars, keep only alphanumeric, dots, and hyphens
+      const sanitizedName = file.name
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9.-]/g, '');
+      const fileName = `weight-room-${Date.now()}-${sanitizedName}`;
+      const filePath = fileName;
+      const bucketName = 'weight-room';
+      
+      await storageHelpers.uploadFile(bucketName, filePath, file);
+      const publicUrl = storageHelpers.getPublicUrl(bucketName, filePath);
       
       setFormData({ ...formData, image: publicUrl });
       setUploadProgress(100);
       toast({ title: "Image uploaded successfully" });
     } catch (error: any) {
-      toast({
-        variant: "destructive",
-        title: "Upload failed",
-        description: error.message,
-      });
+      clearInterval(progressInterval);
+      setIsUploading(false);
+      setUploadProgress(0);
+      
+      // Check if it's a bucket not found error
+      if (error.message?.includes('Bucket not found') || error.statusCode === '404') {
+        toast({
+          variant: "destructive",
+          title: "Storage Bucket Not Found",
+          description: "Please create the 'weight-room' bucket in Supabase Storage. Go to Storage → New Bucket → Name: weight-room (make it public).",
+          duration: 10000,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Upload failed",
+          description: error.message || "Failed to upload image",
+        });
+      }
     } finally {
       clearInterval(progressInterval);
       setIsUploading(false);

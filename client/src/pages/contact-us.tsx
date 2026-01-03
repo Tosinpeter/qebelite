@@ -96,9 +96,9 @@ export default function ContactUs() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation('/')}>
-              <img src={logoImage} alt="QEB Elite Logo" className="h-8 w-auto" />
+              <img src={logoImage} alt="QB Elite Logo" className="h-8 w-auto" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                QEB Elite
+                QB Elite
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -315,7 +315,7 @@ export default function ContactUs() {
       <footer className="border-t border-gray-200 dark:border-gray-800 py-8 bg-white/50 dark:bg-gray-800/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            © 2025 QEB Elite. All rights reserved.
+            © 2025 QB Elite. All rights reserved.
           </p>
         </div>
       </footer>

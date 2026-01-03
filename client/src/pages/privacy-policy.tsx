@@ -87,9 +87,9 @@ export default function PrivacyPolicy() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation('/')}>
-              <img src={logoImage} alt="QEB Elite Logo" className="h-8 w-auto" />
+              <img src={logoImage} alt="QB Elite Logo" className="h-8 w-auto" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                QEB Elite
+                QB Elite
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -137,12 +137,12 @@ export default function PrivacyPolicy() {
           <Card className="mb-12 border-2">
             <CardContent className="p-8">
               <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                Welcome to QEB Elite. We are committed to protecting your privacy and ensuring the security of your personal information. 
+                Welcome to QB Elite. We are committed to protecting your privacy and ensuring the security of your personal information. 
                 This Privacy Policy describes how we collect, use, disclose, and safeguard your information when you use our mobile 
                 application and services.
               </p>
               <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
-                By using QEB Elite, you agree to the collection and use of information in accordance with this policy. 
+                By using QB Elite, you agree to the collection and use of information in accordance with this policy. 
                 If you do not agree with our policies and practices, please do not use our services.
               </p>
             </CardContent>
@@ -185,7 +185,7 @@ export default function PrivacyPolicy() {
                 Children's Privacy
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                QEB Elite is not intended for children under the age of 13. We do not knowingly collect personal 
+                QB Elite is not intended for children under the age of 13. We do not knowingly collect personal 
                 information from children under 13. If you are a parent or guardian and believe your child has 
                 provided us with personal information, please contact us immediately.
               </p>
@@ -236,7 +236,7 @@ export default function PrivacyPolicy() {
       <footer className="border-t border-gray-200 dark:border-gray-800 py-8 bg-white/50 dark:bg-gray-800/50 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            © 2025 QEB Elite. All rights reserved.
+            © 2025 QB Elite. All rights reserved.
           </p>
         </div>
       </footer>

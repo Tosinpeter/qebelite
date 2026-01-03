@@ -59,9 +59,9 @@ export default function SignIn({ onSignIn }: SignInProps) {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <img src={logoPath} alt="QEB Elite Logo" className="h-16" />
+            <img src={logoPath} alt="QB Elite Logo" className="h-16" />
           </div>
-          <CardTitle className="text-2xl font-bold">Sign in to QEB Elite</CardTitle>
+          <CardTitle className="text-2xl font-bold">Sign in to QB Elite</CardTitle>
           <CardDescription>
             Enter your credentials to access the admin dashboard
           </CardDescription>

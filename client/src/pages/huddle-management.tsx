@@ -39,6 +39,7 @@ export default function HuddleManagement() {
     duration: 30,
     status: "upcoming",
     image: "",
+    meetingLink: "",
   });
 
   const { data: huddles = [], isLoading } = useQuery({
@@ -105,6 +106,7 @@ export default function HuddleManagement() {
       duration: 30,
       status: "upcoming",
       image: "",
+      meetingLink: "",
     });
     setImagePreview("");
   };
@@ -119,6 +121,7 @@ export default function HuddleManagement() {
         duration: huddle.duration,
         status: huddle.status,
         image: huddle.image || "",
+        meetingLink: huddle.meetingLink || "",
       });
       setImagePreview(huddle.image || "");
     } else {
@@ -217,6 +220,7 @@ export default function HuddleManagement() {
       duration: formData.duration,
       status: formData.status,
       image: formData.image,
+      meetingLink: formData.meetingLink,
     };
 
     if (editingHuddle) {
@@ -452,6 +456,18 @@ export default function HuddleManagement() {
                   data-testid="input-huddle-duration" 
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="meetingLink">Meeting Link</Label>
+              <Input 
+                id="meetingLink" 
+                type="url" 
+                placeholder="https://meet.google.com/..." 
+                value={formData.meetingLink}
+                onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
+                data-testid="input-huddle-meeting-link" 
+              />
             </div>
 
             <div className="space-y-2">

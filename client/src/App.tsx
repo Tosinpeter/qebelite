@@ -19,7 +19,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Bell, Search, Menu, LogOut, User } from "lucide-react";
 import NotFound from "@/pages/not-found";
-import Landing from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import UserManagement from "@/pages/user-management";
 import HuddleManagement from "@/pages/huddle-management";
@@ -44,7 +43,6 @@ import { coachingSessionQueries, userQueries } from "@/lib/supabase-queries";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Landing} />
       <Route path="/admin" component={Dashboard} />
       <Route path="/users" component={UserManagement} />
       <Route path="/huddles" component={HuddleManagement} />
@@ -61,33 +59,30 @@ function Router() {
 
 function NotificationBell() {
   const [location, setLocation] = useLocation();
-  
+
   const { data: sessions = [] } = useQuery({
-    queryKey: ['/api/coaching-sessions'],
+    queryKey: ["/api/coaching-sessions"],
     queryFn: () => coachingSessionQueries.getAll(),
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const pendingSessions = sessions.filter(s => s.status === 'pending');
+  const pendingSessions = sessions.filter((s) => s.status === "pending");
   const pendingCount = pendingSessions.length;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="relative"
           data-testid="button-notifications"
         >
           <Bell className="h-5 w-5 text-gray-500 dark:text-gray-400" />
           {pendingCount > 0 && (
-            <Badge 
-              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-              variant="destructive"
-            >
-              {pendingCount}
-            </Badge>
+            <span className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center bg-red-600 text-white rounded-full text-xs font-bold border-2 border-white dark:border-gray-800 shadow-lg ring-2 ring-red-600/20">
+              {pendingCount > 99 ? "99+" : pendingCount}
+            </span>
           )}
         </Button>
       </DropdownMenuTrigger>
@@ -102,27 +97,30 @@ function NotificationBell() {
           <>
             <div className="max-h-[400px] overflow-y-auto">
               {pendingSessions.map((session) => (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   key={session.id}
-                  onClick={() => setLocation('/schedule-coaching')}
+                  onClick={() => setLocation("/schedule-coaching")}
                   className="flex flex-col items-start gap-1 py-3 cursor-pointer"
                   data-testid={`notification-${session.id}`}
                 >
                   <div className="font-medium">{session.clientName}</div>
                   <div className="text-xs text-muted-foreground">
-                    {new Date(session.sessionDate).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric'
-                    })} at {session.startTime}
+                    {new Date(session.sessionDate).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    })}{" "}
+                    at {session.startTime}
                   </div>
-                  <div className="text-xs text-muted-foreground">{session.clientEmail}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {session.clientEmail}
+                  </div>
                 </DropdownMenuItem>
               ))}
             </div>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={() => setLocation('/schedule-coaching')}
+            <DropdownMenuItem
+              onClick={() => setLocation("/schedule-coaching")}
               className="text-center justify-center font-medium text-primary"
               data-testid="view-all-notifications"
             >
@@ -148,16 +146,16 @@ function UserAvatar() {
   }, []);
 
   const { data: user } = useQuery({
-    queryKey: ['/users', userId],
+    queryKey: ["/users", userId],
     queryFn: () => userQueries.getById(userId!),
     enabled: !!userId,
   });
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -165,11 +163,19 @@ function UserAvatar() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full" data-testid="button-user-menu">
+        <Button
+          variant="ghost"
+          className="relative h-10 w-10 rounded-full"
+          data-testid="button-user-menu"
+        >
           <Avatar>
             <AvatarImage src={user?.avatarUrl || ""} />
             <AvatarFallback className="bg-primary text-primary-foreground">
-              {user?.displayName ? getInitials(user.displayName) : <User className="h-5 w-5" />}
+              {user?.displayName ? (
+                getInitials(user.displayName)
+              ) : (
+                <User className="h-5 w-5" />
+              )}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -177,7 +183,7 @@ function UserAvatar() {
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>My Account</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={() => setLocation("/profile")}
           data-testid="menu-item-profile"
         >
@@ -185,14 +191,14 @@ function UserAvatar() {
           <span>Profile</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
+        <DropdownMenuItem
           onClick={async () => {
             try {
               const { error } = await supabase.auth.signOut();
               if (error) throw error;
-              window.location.href = '/sign-in';
+              window.location.href = "/sign-in";
             } catch (error: any) {
-              console.error('Logout error:', error);
+              console.error("Logout error:", error);
             }
           }}
           data-testid="menu-item-logout"
@@ -227,8 +233,30 @@ export default function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Redirect authenticated users away from sign-in/sign-up pages
+  useEffect(() => {
+    if (
+      isAuthenticated &&
+      (location === "/sign-in" || location === "/sign-up")
+    ) {
+      setLocation("/admin");
+    }
+  }, [isAuthenticated, location, setLocation]);
+
+  // Redirect root path to /admin
+  useEffect(() => {
+    if (location === "/") {
+      setLocation("/admin");
+    }
+  }, [location, setLocation]);
+
   // Show public pages without auth
-  const publicPages = ["/", "/privacy-policy", "/about-us", "/terms-of-service", "/contact-us"];
+  const publicPages = [
+    "/privacy-policy",
+    "/about-us",
+    "/terms-of-service",
+    "/contact-us",
+  ];
   if (publicPages.includes(location)) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -241,9 +269,7 @@ export default function App() {
             <TermsOfService />
           ) : location === "/contact-us" ? (
             <ContactUs />
-          ) : (
-            <Landing />
-          )}
+          ) : null}
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
@@ -265,7 +291,12 @@ export default function App() {
           {location === "/sign-up" ? (
             <SignUp onSignUp={() => setLocation("/sign-in")} />
           ) : (
-            <SignIn onSignIn={() => setIsAuthenticated(true)} />
+            <SignIn
+              onSignIn={() => {
+                setIsAuthenticated(true);
+                setLocation("/admin");
+              }}
+            />
           )}
           <Toaster />
         </TooltipProvider>
@@ -277,7 +308,11 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
-          <aside className={`${sidebarOpen ? 'w-64' : 'w-0'} transition-all duration-300 overflow-hidden`}>
+          <aside
+            className={`${
+              sidebarOpen ? "w-64" : "w-0"
+            } transition-all duration-300 overflow-hidden`}
+          >
             <AppSidebar />
           </aside>
           <div className="flex flex-col flex-1 overflow-hidden">

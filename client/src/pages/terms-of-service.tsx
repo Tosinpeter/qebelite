@@ -14,7 +14,7 @@ export default function TermsOfService() {
       icon: FileText,
       title: "Acceptance of Terms",
       content: [
-        "By accessing and using QEB Elite, you accept and agree to be bound by these Terms of Service.",
+        "By accessing and using QB Elite, you accept and agree to be bound by these Terms of Service.",
         "If you do not agree to these terms, please do not use our services.",
         "We reserve the right to modify these terms at any time. Continued use of the service constitutes acceptance of modified terms.",
         "You must be at least 13 years old to use our services. Users under 18 require parental consent."
@@ -35,7 +35,7 @@ export default function TermsOfService() {
       icon: AlertCircle,
       title: "Acceptable Use",
       content: [
-        "You agree to use QEB Elite only for lawful purposes and in accordance with these Terms.",
+        "You agree to use QB Elite only for lawful purposes and in accordance with these Terms.",
         "You will not use the service to harass, abuse, or harm another person.",
         "You will not transmit any viruses, malware, or other malicious code.",
         "You will not attempt to gain unauthorized access to our systems or other users' accounts.",
@@ -47,7 +47,7 @@ export default function TermsOfService() {
       icon: Scale,
       title: "Intellectual Property",
       content: [
-        "All content on QEB Elite, including text, graphics, logos, videos, and software, is our property or our licensors'.",
+        "All content on QB Elite, including text, graphics, logos, videos, and software, is our property or our licensors'.",
         "You may not copy, modify, distribute, sell, or lease any part of our services without permission.",
         "User-generated content remains your property, but you grant us a license to use it.",
         "We reserve the right to remove any content that violates these terms or infringes on others' rights.",
@@ -83,7 +83,7 @@ export default function TermsOfService() {
       icon: Shield,
       title: "Limitation of Liability",
       content: [
-        "QEB Elite is provided 'as is' without warranties of any kind, express or implied.",
+        "QB Elite is provided 'as is' without warranties of any kind, express or implied.",
         "We do not guarantee that the service will be uninterrupted, secure, or error-free.",
         "We are not liable for any indirect, incidental, or consequential damages.",
         "Our total liability shall not exceed the amount you paid us in the 12 months before the claim.",
@@ -100,9 +100,9 @@ export default function TermsOfService() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2 cursor-pointer" onClick={() => setLocation('/')}>
-              <img src={logoImage} alt="QEB Elite Logo" className="h-8 w-auto" />
+              <img src={logoImage} alt="QB Elite Logo" className="h-8 w-auto" />
               <span className="text-xl font-bold text-gray-900 dark:text-white">
-                QEB Elite
+                QB Elite
               </span>
             </div>
             <div className="flex items-center gap-3">
@@ -135,7 +135,7 @@ export default function TermsOfService() {
             Terms of Service
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-4">
-            Please read these terms carefully before using QEB Elite. These terms govern your use of our services.
+            Please read these terms carefully before using QB Elite. These terms govern your use of our services.
           </p>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Last Updated: October 26, 2025
@@ -150,7 +150,7 @@ export default function TermsOfService() {
           <Card className="mb-12 border-2">
             <CardContent className="p-8">
               <p className="text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                These Terms of Service ("Terms") govern your access to and use of QEB Elite's mobile application, 
+                These Terms of Service ("Terms") govern your access to and use of QB Elite's mobile application, 
                 website, and services (collectively, the "Service"). By using our Service, you agree to be bound by 
                 these Terms and our Privacy Policy.
               </p>
@@ -197,7 +197,7 @@ export default function TermsOfService() {
                 Health & Fitness Disclaimer
               </h2>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
-                QEB Elite provides general fitness and nutritional information for educational purposes only. 
+                QB Elite provides general fitness and nutritional information for educational purposes only. 
                 Our service is not a substitute for professional medical advice, diagnosis, or treatment.
               </p>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
@@ -207,7 +207,7 @@ export default function TermsOfService() {
               </p>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                 You assume all risks associated with your use of the fitness programs, nutrition plans, and 
-                coaching services provided through QEB Elite.
+                coaching services provided through QB Elite.
               </p>
             </CardContent>
           </Card>
@@ -271,7 +271,7 @@ export default function TermsOfService() {
       <footer className="border-t border-gray-200 dark:border-gray-800 py-8 bg-white/50 dark:bg-gray-800/50 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            © 2025 QEB Elite. All rights reserved.
+            © 2025 QB Elite. All rights reserved.
           </p>
         </div>
       </footer>

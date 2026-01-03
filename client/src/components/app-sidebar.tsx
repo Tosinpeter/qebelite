@@ -2,7 +2,6 @@ import {
   Users,
   Calendar,
   Apple,
-  Home,
   Dumbbell,
   LayoutDashboard,
   BookOpen,
@@ -15,11 +14,6 @@ const menuGroups = [
   {
     label: null,
     items: [
-      {
-        title: "Home",
-        url: "/",
-        icon: Home,
-      },
       {
         title: "Dashboard",
         url: "/admin",
@@ -88,9 +82,9 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="px-3 py-4 border-b border-gray-200 dark:border-gray-700 pt-[18px] pb-[18px]">
           <div className="flex items-center gap-2 px-3">
-            <img src={logoImage} alt="QEB Elite Logo" className="h-8 w-auto" />
+            <img src={logoImage} alt="QB Elite Logo" className="h-8 w-auto" />
             <span className="text-xl font-semibold text-gray-900 dark:text-white">
-              QEB Elite
+              QB Elite
             </span>
           </div>
         </div>

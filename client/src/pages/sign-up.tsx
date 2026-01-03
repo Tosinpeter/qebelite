@@ -90,7 +90,7 @@ export default function SignUp({ onSignUp }: SignUpProps) {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <img src={logoPath} alt="QEB Elite Logo" className="h-16" />
+            <img src={logoPath} alt="QB Elite Logo" className="h-16" />
           </div>
           <CardTitle className="text-2xl font-bold">Create your account</CardTitle>
           <CardDescription>
