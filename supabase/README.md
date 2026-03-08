@@ -5,9 +5,21 @@ This directory contains the database schema and revision history for the QEB Eli
 ## Files
 
 - `schema.sql` - Current complete database schema (tables, storage buckets, and policies)
+- `migrations/` - Forward and rollback migrations (see below)
 - `generate-schema.ts` - Script to generate schema exports and revisions
 - `revisions/` - Directory containing timestamped schema revisions
 - `revisions/index.txt` - Log of all schema revisions
+
+## Migrations (Up / Down)
+
+Migrations that create or change tables use paired files:
+
+- **`.up.sql`** – Apply the change (e.g. `CREATE TABLE`). Run this when deploying or updating the schema.
+- **`.down.sql`** – Revert the change (e.g. `DROP TABLE`). Run this when you need to roll back.
+
+**Apply (migrate up):** run the `.up.sql` file(s) in the Supabase SQL Editor or via `supabase db push` (ensure only the up migrations you want are in the migration path).
+
+**Revert (migrate down):** run the corresponding `.down.sql` file in the SQL Editor to undo that migration.
 
 ## Generating Schema and Revisions
 

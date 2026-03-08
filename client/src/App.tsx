@@ -25,8 +25,13 @@ import HuddleManagement from "@/pages/huddle-management";
 import NutritionManagement from "@/pages/nutrition-management";
 import HomeSettings from "@/pages/home-settings";
 import WeightRoom from "@/pages/weight-room";
+import WorkoutManagement from "@/pages/workout-management";
+import WorkoutPlans from "@/pages/workout-plans";
+import QbTrainings from "@/pages/qb-trainings";
 import AthleteResources from "@/pages/athlete-resources";
 import ScheduleCoaching from "@/pages/schedule-coaching";
+import BulkAssignment from "@/pages/bulk-assignment";
+import PointsManagement from "@/pages/points-management";
 import Profile from "@/pages/profile";
 import SignIn from "@/pages/sign-in";
 import SignUp from "@/pages/sign-up";
@@ -48,8 +53,13 @@ function Router() {
       <Route path="/huddles" component={HuddleManagement} />
       <Route path="/nutrition" component={NutritionManagement} />
       <Route path="/weight-room" component={WeightRoom} />
+      <Route path="/workouts" component={WorkoutManagement} />
+      <Route path="/workout-plans" component={WorkoutPlans} />
+      <Route path="/qb-trainings" component={QbTrainings} />
       <Route path="/athlete-resources" component={AthleteResources} />
       <Route path="/schedule-coaching" component={ScheduleCoaching} />
+      <Route path="/bulk-assignment" component={BulkAssignment} />
+      <Route path="/points" component={PointsManagement} />
       <Route path="/home-settings" component={HomeSettings} />
       <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
@@ -309,9 +319,8 @@ export default function App() {
       <TooltipProvider>
         <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900">
           <aside
-            className={`${
-              sidebarOpen ? "w-64" : "w-0"
-            } transition-all duration-300 overflow-hidden`}
+            className={`${sidebarOpen ? "w-64" : "w-0"
+              } transition-all duration-300 overflow-hidden`}
           >
             <AppSidebar />
           </aside>

@@ -67,7 +67,7 @@ export default function UserManagement() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) => 
+    mutationFn: ({ id, data }: { id: string; data: Partial<User> }) =>
       userQueries.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
@@ -98,8 +98,8 @@ export default function UserManagement() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['profiles'] });
-      toast({ 
-        title: variables.banned ? "User banned successfully" : "User unbanned successfully" 
+      toast({
+        title: variables.banned ? "User banned successfully" : "User unbanned successfully"
       });
     },
     onError: (error: any) => {
@@ -111,7 +111,7 @@ export default function UserManagement() {
     const matchesDisplayName = user.displayName?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesId = user.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesEmail = user.email?.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     return matchesDisplayName || matchesId || matchesEmail;
   });
 
@@ -293,7 +293,7 @@ export default function UserManagement() {
           }
           throw new Error(errorMessage);
         }
-        
+
         if (!authData.user) {
           throw new Error('User creation failed - no user returned from authentication');
         }
@@ -457,15 +457,15 @@ export default function UserManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="flex flex-col items-center gap-3">
-              <div 
+              <div
                 className="relative cursor-pointer group"
                 onClick={() => !isUploading && document.getElementById('avatar-file-upload')?.click()}
               >
                 <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-gray-200 dark:border-gray-700 flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                   {formData.avatarUrl ? (
-                    <img 
-                      src={formData.avatarUrl} 
-                      alt="Avatar" 
+                    <img
+                      src={formData.avatarUrl}
+                      alt="Avatar"
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -510,24 +510,24 @@ export default function UserManagement() {
             {!editingUser && (
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
+                <Input
+                  id="email"
                   type="email"
-                  placeholder="user@example.com" 
+                  placeholder="user@example.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  data-testid="input-user-email" 
+                  data-testid="input-user-email"
                 />
               </div>
             )}
             <div className="space-y-2">
               <Label htmlFor="displayName">Display Name</Label>
-              <Input 
-                id="displayName" 
-                placeholder="John Doe" 
+              <Input
+                id="displayName"
+                placeholder="John Doe"
                 value={formData.displayName}
                 onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                data-testid="input-user-displayname" 
+                data-testid="input-user-displayname"
               />
             </div>
             <div className="space-y-2">
@@ -546,10 +546,10 @@ export default function UserManagement() {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
-                  <Input 
-                    id="password" 
+                  <Input
+                    id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter password" 
+                    placeholder="Enter password"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     data-testid="input-user-password"
@@ -575,8 +575,8 @@ export default function UserManagement() {
             <Button variant="outline" onClick={() => setIsDialogOpen(false)} data-testid="button-cancel">
               Cancel
             </Button>
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={updateMutation.isPending || createMutation.isPending}
               data-testid="button-save-user"
             >

@@ -6,6 +6,11 @@ import {
   LayoutDashboard,
   BookOpen,
   CalendarClock,
+  UserPlus,
+  Trophy,
+  Activity,
+  Video,
+  ClipboardList,
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import logoImage from "@assets/logo_1759665184540.png";
@@ -30,6 +35,11 @@ const menuGroups = [
         icon: Users,
       },
       {
+        title: "Bulk Assignment",
+        url: "/bulk-assignment",
+        icon: UserPlus,
+      },
+      {
         title: "Huddles",
         url: "/huddles",
         icon: Calendar,
@@ -38,6 +48,11 @@ const menuGroups = [
         title: "Coach Availability",
         url: "/schedule-coaching",
         icon: CalendarClock,
+      },
+      {
+        title: "Points",
+        url: "/points",
+        icon: Trophy,
       },
     ],
   },
@@ -53,6 +68,21 @@ const menuGroups = [
         title: "Weight Room",
         url: "/weight-room",
         icon: Dumbbell,
+      },
+      {
+        title: "Workouts",
+        url: "/workouts",
+        icon: Activity,
+      },
+      {
+        title: "Workout Plans",
+        url: "/workout-plans",
+        icon: ClipboardList,
+      },
+      {
+        title: "QB Trainings",
+        url: "/qb-trainings",
+        icon: Video,
       },
       {
         title: "Athlete Resources",
@@ -108,11 +138,10 @@ export function AppSidebar() {
                       <Link
                         href={item.url}
                         data-testid={`link-nav-${item.title.toLowerCase().replace(" ", "-")}`}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-                          isActive
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all ${isActive
                             ? "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
                             : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        }`}
+                          }`}
                       >
                         <Icon className="h-5 w-5 flex-shrink-0" />
                         <span>{item.title}</span>

@@ -31,7 +31,7 @@ export default function HuddleManagement() {
   const [countdown, setCountdown] = useState("");
   const [imagePreview, setImagePreview] = useState<string>("");
   const [uploadingImage, setUploadingImage] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -56,16 +56,16 @@ export default function HuddleManagement() {
       resetForm();
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: error.message || "Failed to schedule huddle",
-        variant: "destructive" 
+        variant: "destructive"
       });
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Huddle> }) => 
+    mutationFn: ({ id, data }: { id: string; data: Partial<Huddle> }) =>
       huddleQueries.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/huddles'] });
@@ -75,10 +75,10 @@ export default function HuddleManagement() {
       resetForm();
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: error.message || "Failed to update huddle",
-        variant: "destructive" 
+        variant: "destructive"
       });
     },
   });
@@ -90,10 +90,10 @@ export default function HuddleManagement() {
       toast({ title: "Success", description: "Huddle deleted successfully" });
     },
     onError: (error: any) => {
-      toast({ 
-        title: "Error", 
+      toast({
+        title: "Error",
         description: error.message || "Failed to delete huddle",
-        variant: "destructive" 
+        variant: "destructive"
       });
     },
   });
@@ -232,7 +232,7 @@ export default function HuddleManagement() {
 
   useEffect(() => {
     if (!huddles.length) return;
-    
+
     const upcoming = huddles
       .filter(h => h.status === "upcoming")
       .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
@@ -281,7 +281,7 @@ export default function HuddleManagement() {
         <Card className="relative overflow-hidden border-primary/20">
           {nextHuddle.image && (
             <>
-              <div 
+              <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${nextHuddle.image})` }}
               />
@@ -345,8 +345,8 @@ export default function HuddleManagement() {
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex gap-4 flex-1">
                       {huddle.image && (
-                        <img 
-                          src={huddle.image} 
+                        <img
+                          src={huddle.image}
                           alt={huddle.title}
                           className="w-16 h-16 rounded-md object-cover"
                         />
@@ -378,16 +378,16 @@ export default function HuddleManagement() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleOpenDialog(huddle)}
                         data-testid={`button-edit-huddle-${huddle.id}`}
                       >
                         Edit
                       </Button>
-                      <Button 
-                        variant="ghost" 
+                      <Button
+                        variant="ghost"
                         size="sm"
                         onClick={() => deleteMutation.mutate(huddle.id)}
                         disabled={deleteMutation.isPending}
@@ -415,58 +415,58 @@ export default function HuddleManagement() {
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
-              <Input 
-                id="title" 
-                placeholder="Team Standup" 
+              <Input
+                id="title"
+                placeholder="Team Standup"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                data-testid="input-huddle-title" 
+                data-testid="input-huddle-title"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description" 
-                placeholder="What will this huddle be about?" 
+              <Textarea
+                id="description"
+                placeholder="What will this huddle be about?"
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                data-testid="input-huddle-description" 
+                data-testid="input-huddle-description"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="date">Date & Time *</Label>
-                <Input 
-                  id="date" 
-                  type="datetime-local" 
+                <Input
+                  id="date"
+                  type="datetime-local"
                   value={formData.scheduledAt || ''}
                   onChange={(e) => setFormData({ ...formData, scheduledAt: e.target.value })}
                   min={new Date().toISOString().slice(0, 16)}
-                  data-testid="input-huddle-datetime" 
+                  data-testid="input-huddle-datetime"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="duration">Duration (minutes) *</Label>
-                <Input 
-                  id="duration" 
-                  type="number" 
-                  placeholder="30" 
+                <Input
+                  id="duration"
+                  type="number"
+                  placeholder="30"
                   value={formData.duration}
                   onChange={(e) => setFormData({ ...formData, duration: Number(e.target.value) })}
-                  data-testid="input-huddle-duration" 
+                  data-testid="input-huddle-duration"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="meetingLink">Meeting Link</Label>
-              <Input 
-                id="meetingLink" 
-                type="url" 
-                placeholder="https://meet.google.com/..." 
+              <Input
+                id="meetingLink"
+                type="url"
+                placeholder="https://meet.google.com/..."
                 value={formData.meetingLink}
                 onChange={(e) => setFormData({ ...formData, meetingLink: e.target.value })}
-                data-testid="input-huddle-meeting-link" 
+                data-testid="input-huddle-meeting-link"
               />
             </div>
 
@@ -494,13 +494,13 @@ export default function HuddleManagement() {
                     data-testid="dropzone-upload"
                   >
                     <input {...getInputProps()} data-testid="input-image-upload" />
-                    
+
                     {imagePreview && !uploadingImage ? (
                       // Image Preview Inside Dropzone
                       <div className="relative group h-full">
-                        <img 
-                          src={imagePreview} 
-                          alt="Huddle preview" 
+                        <img
+                          src={imagePreview}
+                          alt="Huddle preview"
                           className="w-full h-full object-cover"
                           data-testid="img-preview"
                         />
@@ -571,18 +571,18 @@ export default function HuddleManagement() {
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => {
                 setIsDialogOpen(false);
                 setEditingHuddle(null);
                 resetForm();
-              }} 
+              }}
               data-testid="button-cancel"
             >
               Cancel
             </Button>
-            <Button 
+            <Button
               onClick={handleSubmit}
               disabled={createMutation.isPending || updateMutation.isPending}
               data-testid="button-save-huddle"
